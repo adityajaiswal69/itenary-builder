@@ -67,11 +67,24 @@ class ItineraryController extends Controller
         $request->validate([
             'title' => 'sometimes|string|max:255',
             'content' => 'sometimes|array',
+            'cover_image' => 'sometimes|string',
             'is_published' => 'sometimes|boolean'
         ]);
 
         $itinerary = Auth::user()->itineraries()->findOrFail($id);
-        $itinerary->update($request->only(['title', 'content', 'is_published']));
+        
+        // If publishing and no share_uuid exists, generate one
+        if ($request->has('is_published') && $request->is_published && !$itinerary->share_uuid) {
+            $itinerary->update([
+                'title' => $request->title ?? $itinerary->title,
+                'content' => $request->content ?? $itinerary->content,
+                'cover_image' => $request->cover_image ?? $itinerary->cover_image,
+                'is_published' => true,
+                'share_uuid' => Str::uuid()
+            ]);
+        } else {
+            $itinerary->update($request->only(['title', 'content', 'cover_image', 'is_published']));
+        }
 
         return response()->json($itinerary);
     }

@@ -14,6 +14,7 @@ class Itinerary extends Model
         'user_id',
         'title',
         'content',
+        'cover_image',
         'is_published',
         'share_uuid'
     ];

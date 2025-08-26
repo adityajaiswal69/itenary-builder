@@ -81,9 +81,12 @@ export const PackagesList: React.FC<PackagesListProps> = ({
     }
   };
 
-  const getShareUrl = (packageId: string) => {
-    // This would be implemented based on your sharing logic
-    return `${window.location.origin}/share/${packageId}`;
+  const getShareUrl = (pkg: PackageType) => {
+    // Use the itinerary's share_uuid for the share URL
+    if (!pkg.itinerary?.share_uuid) {
+      throw new Error('Itinerary not published or share link not available');
+    }
+    return `${window.location.origin}/share/${pkg.itinerary.share_uuid}`;
   };
 
   const filteredPackages = packages.filter(pkg => {
@@ -290,7 +293,14 @@ export const PackagesList: React.FC<PackagesListProps> = ({
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => window.open(getShareUrl(pkg.id), '_blank')}
+                              onClick={() => {
+                                try {
+                                  const shareUrl = getShareUrl(pkg);
+                                  window.open(shareUrl, '_blank');
+                                } catch (error) {
+                                  alert('Cannot preview: Itinerary not published. Please publish the itinerary first.');
+                                }
+                              }}
                               className="text-xs h-6 px-2"
                             >
                               <Eye className="h-3 w-3 mr-1" />
@@ -299,7 +309,15 @@ export const PackagesList: React.FC<PackagesListProps> = ({
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigator.clipboard.writeText(getShareUrl(pkg.id))}
+                              onClick={() => {
+                                try {
+                                  const shareUrl = getShareUrl(pkg);
+                                  navigator.clipboard.writeText(shareUrl);
+                                  alert('Share link copied to clipboard!');
+                                } catch (error) {
+                                  alert('Cannot share: Itinerary not published. Please publish the itinerary first.');
+                                }
+                              }}
                               className="text-xs h-6 px-2"
                             >
                               <Share2 className="h-3 w-3 mr-1" />

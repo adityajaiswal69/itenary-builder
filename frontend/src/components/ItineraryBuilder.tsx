@@ -19,7 +19,8 @@ import {
   Calendar,
   Check,
   MapPin,
-  DollarSign
+  DollarSign,
+  Share2
 } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { itineraryApi, packageApi } from '../services/api';
@@ -288,6 +289,104 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     const updatedDays = [...days];
     updatedDays[selectedDayIndex].events.push(newEvent);
     setDays(updatedDays);
+  };
+
+  const publishItinerary = async () => {
+    if (!title.trim()) {
+      setError('Please enter a title');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const itineraryData = {
+        title,
+        content: { days },
+        cover_image: coverImage || undefined,
+        is_published: true, // Publish the itinerary
+      };
+
+      let savedItinerary;
+      if (currentItinerary) {
+        savedItinerary = await itineraryApi.update(currentItinerary.id, itineraryData);
+      } else {
+        savedItinerary = await itineraryApi.create(itineraryData);
+      }
+
+      // Update package with itinerary_id, title, and cover image
+      if (currentPackage && savedItinerary.data) {
+        const packageUpdateData = {
+          itinerary_id: savedItinerary.data.id,
+          title: title, // Sync package title with itinerary title
+          cover_image: coverImage || undefined, // Sync cover image
+          is_published: true, // Publish the package too
+        };
+        
+        await packageApi.update(currentPackage.id, packageUpdateData);
+      }
+
+      // Create package if we have pending package data or if this is a new package creation
+      if (savedItinerary.data) {
+        try {
+          if (pendingPackageData) {
+            // Create package with pending data
+            const packageData = {
+              ...pendingPackageData,
+              itinerary_id: savedItinerary.data.id,
+              is_published: true, // Publish the package
+            };
+            console.log('Creating package with pending data:', packageData);
+            const packageResponse = await packageApi.create(packageData);
+            console.log('Package created successfully:', packageResponse.data);
+            setPendingPackageData(null);
+            setSuccessMessage('Package published successfully!');
+          } else if (isCreating && !currentPackage) {
+            // Create default package for new itinerary
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            const packageData = {
+              itinerary_id: savedItinerary.data.id,
+              title: title,
+              start_location: 'TBD', // Required field, can't be empty
+              valid_till: tomorrow.toISOString().split('T')[0],
+              description: [{ content: 'Package description will be added here.' }],
+              price: 0,
+              price_type: 'per_person' as const,
+              locations: ['TBD'], // Required array, can't be empty
+              inclusions: ['TBD'], // Required array, can't be empty
+              exclusions: ['TBD'], // Required array, can't be empty
+              cover_image: coverImage || undefined,
+              is_published: true, // Publish the package
+            };
+            
+            console.log('Creating default package:', packageData);
+            const packageResponse = await packageApi.create(packageData);
+            console.log('Default package created successfully:', packageResponse.data);
+            setSuccessMessage('Default package published successfully!');
+          }
+        } catch (packageError) {
+          console.error('Failed to create package:', packageError);
+          setError('Itinerary published but failed to create package. Please try again.');
+          return; // Don't navigate away if package creation failed
+        }
+      }
+
+      await loadItineraries();
+      setError(null);
+      
+      // Show success message briefly before navigating
+      setTimeout(() => {
+        // Navigate back to packages list
+        navigate('/');
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to publish itinerary:', error);
+      setError('Failed to publish itinerary');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const saveItinerary = async () => {
@@ -803,6 +902,10 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                 <Button onClick={saveItinerary} disabled={loading} className="bg-purple-600 hover:bg-purple-700">
                   <Save className="h-4 w-4 mr-2" />
                   {loading ? 'Saving...' : 'Save Package'}
+                </Button>
+                <Button onClick={publishItinerary} disabled={loading} className="bg-green-600 hover:bg-green-700">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  {loading ? 'Publishing...' : 'Publish & Share'}
                 </Button>
               </div>
             </div>

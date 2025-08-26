@@ -37,11 +37,23 @@ export const ItineraryViewer: React.FC = () => {
   const loadItinerary = async () => {
     try {
       setLoading(true);
+      console.log('Loading itinerary for shareUuid:', shareUuid);
       const response = await shareApi.getByShareUuid(shareUuid!);
+      console.log('Itinerary loaded successfully:', response.data);
       setItinerary(response.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load itinerary:', error);
-      setError('Itinerary not found or not published');
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
+      if (error.response?.status === 404) {
+        setError('Itinerary not found or not published');
+      } else if (error.response?.status === 401) {
+        setError('Authentication required');
+      } else {
+        setError('Failed to load itinerary. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

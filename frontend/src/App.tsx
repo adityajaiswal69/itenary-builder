@@ -63,35 +63,67 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-white">
-        {isAuthenticated ? (
-          <Routes>
-            <Route 
-              path="/" 
-              element={
-                <PackagesList 
-                  onLogout={handleLogout}
-                  onCreatePackage={() => window.location.href = '/create-package'}
-                  onEditPackage={(packageId) => window.location.href = `/edit-package/${packageId}`}
-                />
-              } 
-            />
-            <Route 
-              path="/create-package" 
-              element={<ItineraryBuilder onLogout={handleLogout} />} 
-            />
-            <Route 
-              path="/edit-package/:packageId" 
-              element={<ItineraryBuilder onLogout={handleLogout} />} 
-            />
-            <Route path="/share/:shareUuid" element={<ItineraryViewer />} />
-          </Routes>
-        ) : (
-          showLogin ? (
-            <Login onLogin={handleLogin} onSwitchToRegister={() => setShowLogin(false)} />
+        <Routes>
+          {/* Public routes - accessible without authentication */}
+          <Route path="/share/:shareUuid" element={<ItineraryViewer />} />
+          
+          {/* Protected routes - require authentication */}
+          {isAuthenticated ? (
+            <>
+              <Route 
+                path="/" 
+                element={
+                  <PackagesList 
+                    onLogout={handleLogout}
+                    onCreatePackage={() => window.location.href = '/create-package'}
+                    onEditPackage={(packageId) => window.location.href = `/edit-package/${packageId}`}
+                  />
+                } 
+              />
+              <Route 
+                path="/create-package" 
+                element={<ItineraryBuilder onLogout={handleLogout} />} 
+              />
+              <Route 
+                path="/edit-package/:packageId" 
+                element={<ItineraryBuilder onLogout={handleLogout} />} 
+              />
+            </>
           ) : (
-            <Register onRegister={handleRegister} onSwitchToLogin={() => setShowLogin(true)} />
-          )
-        )}
+            <>
+              <Route 
+                path="/" 
+                element={
+                  showLogin ? (
+                    <Login onLogin={handleLogin} onSwitchToRegister={() => setShowLogin(false)} />
+                  ) : (
+                    <Register onRegister={handleRegister} onSwitchToLogin={() => setShowLogin(true)} />
+                  )
+                } 
+              />
+              <Route 
+                path="/create-package" 
+                element={
+                  showLogin ? (
+                    <Login onLogin={handleLogin} onSwitchToRegister={() => setShowLogin(false)} />
+                  ) : (
+                    <Register onRegister={handleRegister} onSwitchToLogin={() => setShowLogin(true)} />
+                  )
+                } 
+              />
+              <Route 
+                path="/edit-package/:packageId" 
+                element={
+                  showLogin ? (
+                    <Login onLogin={handleLogin} onSwitchToRegister={() => setShowLogin(false)} />
+                  ) : (
+                    <Register onRegister={handleRegister} onSwitchToLogin={() => setShowLogin(true)} />
+                  )
+                } 
+              />
+            </>
+          )}
+        </Routes>
       </div>
     </Router>
   );

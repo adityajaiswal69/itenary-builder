@@ -2,7 +2,16 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
+// API instance for authenticated requests
 const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// API instance for public requests (no authentication)
+const publicApi = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -59,6 +68,7 @@ export interface Package {
   is_published: boolean;
   created_at: string;
   updated_at: string;
+  itinerary?: Itinerary;
 }
 
 export const itineraryApi = {
@@ -83,7 +93,7 @@ export const packageApi = {
 
 export const shareApi = {
   getByShareUuid: (shareUuid: string) => 
-    api.get<Itinerary>(`/share/${shareUuid}`),
+    publicApi.get<Itinerary>(`/share/${shareUuid}`),
 };
 
 export default api;
