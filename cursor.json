@@ -1,0 +1,93 @@
+{
+    "name": "itinerary-builder",
+    "description": "A travel agency itinerary builder with Notion-like UI. Owners can create itineraries, packages, and generate shareable links for clients.",
+    "frontend": {
+      "framework": "react",
+      "bundler": "vite",
+      "language": "typescript",
+      "ui": {
+        "library": "shadcn/ui",
+        "styling": "tailwindcss",
+        "editor": "notion-style block editor (custom rich text with slash commands)"
+      },
+      "features": [
+        "Category & Sub-category selector (Info, Hotel, Activity, Flights, Transport, Cruise)",
+        "Itinerary blocks (Title, Notes, Images)",
+        "WYSIWYG rich-text editor with headings, lists, tables, embeds",
+        "Image uploader (up to 5 photos per block)",
+        "Package Info form (title, start location, validity, price, inclusions, exclusions)",
+        "Publish/Unpublish toggle",
+        "Client-friendly shareable preview (read-only, auto-updated when owner edits)"
+      ]
+    },
+    "backend": {
+      "framework": "laravel",
+      "language": "php",
+      "database": "mysql",
+      "features": [
+        "User authentication (for agency owners)",
+        "Itinerary CRUD (Create, Read, Update, Delete)",
+        "Package CRUD",
+        "Block-based content storage (JSONB style like Notion)",
+        "Shareable public link generation (UUID based, no auth required)",
+        "Real-time updates (Laravel WebSockets or Pusher compatible)"
+      ]
+    },
+    "database_schema": {
+      "users": {
+        "id": "uuid",
+        "name": "string",
+        "email": "string",
+        "password": "string"
+      },
+      "itineraries": {
+        "id": "uuid",
+        "user_id": "uuid (FK users.id)",
+        "title": "string",
+        "content": "json (block structure like Notion)",
+        "is_published": "boolean",
+        "share_uuid": "string (nullable)",
+        "created_at": "timestamp",
+        "updated_at": "timestamp"
+      },
+      "packages": {
+        "id": "uuid",
+        "itinerary_id": "uuid (FK itineraries.id)",
+        "title": "string",
+        "start_location": "string",
+        "valid_till": "date",
+        "description": "json",
+        "price": "integer",
+        "price_type": "enum('per_person', 'total')",
+        "locations": "json (array of strings)",
+        "inclusions": "json (array of strings)",
+        "exclusions": "json (array of strings)",
+        "is_published": "boolean",
+        "created_at": "timestamp",
+        "updated_at": "timestamp"
+      }
+    },
+    "shareable_links": {
+      "url_pattern": "/share/:share_uuid",
+      "access": "public, read-only",
+      "features": [
+        "No login required",
+        "Read-only view",
+        "Auto-updates when content is edited by owner"
+      ]
+    },
+    "dev_setup": {
+      "commands": {
+        "frontend": [
+          "npm create vite@latest frontend -- --template react-ts",
+          "cd frontend && npm install tailwindcss postcss autoprefixer shadcn/ui",
+          "npx shadcn-ui init"
+        ],
+        "backend": [
+          "composer create-project laravel/laravel backend",
+          "cd backend && php artisan migrate"
+        ]
+      }
+    }
+  }
+  
