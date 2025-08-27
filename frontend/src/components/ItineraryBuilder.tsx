@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { 
@@ -25,7 +25,7 @@ import {
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { itineraryApi, packageApi } from '../services/api';
 import type { Itinerary, Package as PackageType } from '../services/api';
-import { TipTapEditor } from './TipTapEditor';
+
 import { PackageInfoModal } from './PackageInfoModal';
 import { EventModal } from './EventModal';
 
@@ -39,11 +39,49 @@ interface Day {
 interface Event {
   id: string;
   category: 'Info' | 'Hotel' | 'Activity' | 'Flights' | 'Transport' | 'Cruise';
-  subCategory: 'Info' | 'City Guide';
+  subCategory?: string;
+  type?: 'Check In' | 'Check Out' | 'Departure' | 'Arrival';
   title: string;
   notes: string;
   images: string[];
   isInLibrary: boolean;
+  
+  // Time fields
+  time?: string;
+  duration?: string;
+  timezone?: string;
+  
+  // Common details
+  bookedThrough?: string;
+  confirmationNumber?: string;
+  
+  // Category-specific fields
+  // Hotel fields
+  roomBedType?: string;
+  hotelType?: string;
+  
+  // Activity fields
+  provider?: string;
+  
+  // Flight fields
+  from?: string;
+  to?: string;
+  airlines?: string;
+  terminal?: string;
+  gate?: string;
+  flightNumber?: string;
+  
+  // Transport fields
+  carrier?: string;
+  transportNumber?: string;
+  
+  // Cruise fields
+  cabinType?: string;
+  cabinNumber?: string;
+  
+  // Price
+  amount?: number;
+  currency?: string;
 }
 
 interface LibraryItem {
@@ -66,7 +104,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
   const location = useLocation();
   const isCreating = location.pathname === '/create-package';
   
-  const [itineraries, setItineraries] = useState<Itinerary[]>([]);
+  const [, setItineraries] = useState<Itinerary[]>([]);
   const [currentItinerary, setCurrentItinerary] = useState<Itinerary | null>(null);
   const [packages, setPackages] = useState<PackageType[]>([]);
   const [title, setTitle] = useState('');
@@ -161,7 +199,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     }
   };
 
-  const loadPackages = async () => {
+  const _loadPackages = async () => {
     if (!currentItinerary) return;
     try {
       const response = await packageApi.getAll();
@@ -185,7 +223,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     setPendingPackageData(null);
   };
 
-  const selectItinerary = (itinerary: Itinerary) => {
+  const _selectItinerary = (itinerary: Itinerary) => {
     setCurrentItinerary(itinerary);
     setTitle(itinerary.title);
     setCoverImage(itinerary.cover_image || null);
@@ -485,7 +523,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     }
   };
 
-  const deleteItinerary = async (id: string) => {
+  const _deleteItinerary = async (id: string) => {
     if (!confirm('Are you sure you want to delete this itinerary?')) return;
 
     try {
@@ -500,7 +538,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     }
   };
 
-  const getShareUrl = (shareUuid: string) => {
+  const _getShareUrl = (shareUuid: string) => {
     return `${window.location.origin}/share/${shareUuid}`;
   };
 
@@ -1186,7 +1224,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
 
                  {/* Days Content */}
                  <div className="space-y-8">
-                   {days.map((day: Day, dayIndex: number) => (
+                   {days.map((day: Day) => (
                      <div key={day.id}>
                        <h3 className="text-2xl font-bold mb-4">
                          {day.title}

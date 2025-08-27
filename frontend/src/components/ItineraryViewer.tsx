@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { ArrowLeft, Package, MapPin, Calendar, DollarSign, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Calendar, DollarSign, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, Utensils } from 'lucide-react';
 import { shareApi } from '../services/api';
 import type { Itinerary } from '../services/api';
 
@@ -15,11 +15,49 @@ interface Day {
 interface Event {
   id: string;
   category: 'Info' | 'Hotel' | 'Activity' | 'Flights' | 'Transport' | 'Cruise';
-  subCategory: 'Info' | 'City Guide';
+  subCategory?: string;
+  type?: 'Check In' | 'Check Out' | 'Departure' | 'Arrival';
   title: string;
   notes: string;
   images: string[];
   isInLibrary: boolean;
+  
+  // Time fields
+  time?: string;
+  duration?: string;
+  timezone?: string;
+  
+  // Common details
+  bookedThrough?: string;
+  confirmationNumber?: string;
+  
+  // Category-specific fields
+  // Hotel fields
+  roomBedType?: string;
+  hotelType?: string;
+  
+  // Activity fields
+  provider?: string;
+  
+  // Flight fields
+  from?: string;
+  to?: string;
+  airlines?: string;
+  terminal?: string;
+  gate?: string;
+  flightNumber?: string;
+  
+  // Transport fields
+  carrier?: string;
+  transportNumber?: string;
+  
+  // Cruise fields
+  cabinType?: string;
+  cabinNumber?: string;
+  
+  // Price
+  amount?: number;
+  currency?: string;
 }
 
 export const ItineraryViewer: React.FC = () => {
@@ -112,6 +150,148 @@ export const ItineraryViewer: React.FC = () => {
     } else if (e.key === 'ArrowLeft') {
       prevImage();
     }
+  };
+
+  const renderCategorySpecificDetails = (event: Event) => {
+    const details = [];
+    
+    // Time information
+    if (event.time || event.duration || event.timezone) {
+      details.push(
+        <div key="time" className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+          <Clock className="h-4 w-4" />
+          <span>
+            {event.time && `Time: ${event.time}`}
+            {event.duration && ` | Duration: ${event.duration}`}
+            {event.timezone && ` | ${event.timezone}`}
+          </span>
+        </div>
+      );
+    }
+
+    // Booking details
+    if (event.bookedThrough || event.confirmationNumber) {
+      details.push(
+        <div key="booking" className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+          <Info className="h-4 w-4" />
+          <span>
+            {event.bookedThrough && `Booked through: ${event.bookedThrough}`}
+            {event.confirmationNumber && ` | Confirmation: ${event.confirmationNumber}`}
+          </span>
+        </div>
+      );
+    }
+
+    // Category-specific details
+    switch (event.category) {
+      case 'Hotel':
+        if (event.roomBedType || event.hotelType) {
+          details.push(
+            <div key="hotel" className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+              <Building className="h-4 w-4" />
+              <span>
+                {event.roomBedType && `Room: ${event.roomBedType}`}
+                {event.hotelType && ` | Type: ${event.hotelType}`}
+              </span>
+            </div>
+          );
+        }
+        break;
+      
+      case 'Activity':
+        if (event.provider) {
+          details.push(
+            <div key="activity" className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+              <Utensils className="h-4 w-4" />
+              <span>Provider: {event.provider}</span>
+            </div>
+          );
+        }
+        break;
+      
+      case 'Flights':
+        if (event.from || event.to || event.airlines || event.flightNumber || event.terminal || event.gate) {
+          details.push(
+            <div key="flight" className="space-y-1">
+              {event.from && event.to && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Plane className="h-4 w-4" />
+                  <span>{event.from} → {event.to}</span>
+                </div>
+              )}
+              {(event.airlines || event.flightNumber) && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Plane className="h-4 w-4" />
+                  <span>
+                    {event.airlines && `Airlines: ${event.airlines}`}
+                    {event.flightNumber && ` | Flight: ${event.flightNumber}`}
+                  </span>
+                </div>
+              )}
+              {(event.terminal || event.gate) && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Building className="h-4 w-4" />
+                  <span>
+                    {event.terminal && `Terminal: ${event.terminal}`}
+                    {event.gate && ` | Gate: ${event.gate}`}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        }
+        break;
+      
+      case 'Transport':
+        if (event.carrier || event.transportNumber) {
+          details.push(
+            <div key="transport" className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+              <Car className="h-4 w-4" />
+              <span>
+                {event.carrier && `Carrier: ${event.carrier}`}
+                {event.transportNumber && ` | ${event.subCategory === 'Train' ? 'Train' : 'Number'}: ${event.transportNumber}`}
+              </span>
+            </div>
+          );
+        }
+        break;
+      
+      case 'Cruise':
+        if (event.carrier || event.cabinType || event.cabinNumber) {
+          details.push(
+            <div key="cruise" className="space-y-1">
+              {event.carrier && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Ship className="h-4 w-4" />
+                  <span>Carrier: {event.carrier}</span>
+                </div>
+              )}
+              {(event.cabinType || event.cabinNumber) && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Building className="h-4 w-4" />
+                  <span>
+                    {event.cabinType && `Cabin Type: ${event.cabinType}`}
+                    {event.cabinNumber && ` | Cabin: ${event.cabinNumber}`}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        }
+        break;
+    }
+
+    // Price information
+    if (event.amount && event.amount > 0) {
+      details.push(
+        <div key="price" className="flex items-center gap-2 text-sm text-green-600 font-medium">
+          <DollarSign className="h-4 w-4" />
+          <span>{event.currency || '₹ (INR)'} {event.amount.toLocaleString()}</span>
+        </div>
+      );
+    }
+
+    return details;
   };
 
   useEffect(() => {
@@ -228,7 +408,7 @@ export const ItineraryViewer: React.FC = () => {
 
         {/* Days Content */}
         <div className="space-y-8">
-          {days.map((day: Day, dayIndex: number) => (
+          {days.map((day: Day) => (
             <div key={day.id}>
               <h3 className="text-2xl font-bold mb-4">{day.title}</h3>
               
@@ -243,21 +423,35 @@ export const ItineraryViewer: React.FC = () => {
                 <div className="space-y-4">
                   {day.events.map((event: Event) => (
                     <div key={event.id} className="bg-white border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-3">
                         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                           {event.category}
                         </span>
-                        <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
-                          {event.subCategory}
-                        </span>
+                        {event.subCategory && (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+                            {event.subCategory}
+                          </span>
+                        )}
+                        {event.type && (
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                            {event.type}
+                          </span>
+                        )}
                       </div>
                       
-                      <h4 className="font-semibold mb-2">{event.title}</h4>
+                      <h4 className="font-semibold mb-3">{event.title}</h4>
                       
-                      <div 
-                        className="prose max-w-none text-sm text-gray-700 mb-3"
-                        dangerouslySetInnerHTML={{ __html: event.notes }}
-                      />
+                      {/* Category-specific details */}
+                      <div className="mb-3">
+                        {renderCategorySpecificDetails(event)}
+                      </div>
+                      
+                      {event.notes && (
+                        <div 
+                          className="prose max-w-none text-sm text-gray-700 mb-3"
+                          dangerouslySetInnerHTML={{ __html: event.notes }}
+                        />
+                      )}
                       
                       {event.images && event.images.length > 0 && (
                         <div className="grid grid-cols-2 gap-2">

@@ -1,18 +1,56 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { X, Plus, Camera, Info, FileText } from 'lucide-react';
+import { X, Plus, Camera, Calendar, Utensils, Car } from 'lucide-react';
 import { TipTapEditor } from './TipTapEditor';
 import { ErrorBoundary } from './ErrorBoundary';
 
 interface Event {
   id: string;
   category: 'Info' | 'Hotel' | 'Activity' | 'Flights' | 'Transport' | 'Cruise';
-  subCategory: 'Info' | 'City Guide';
+  subCategory?: string;
+  type?: 'Check In' | 'Check Out' | 'Departure' | 'Arrival';
   title: string;
   notes: string;
   images: string[];
   isInLibrary: boolean;
+  
+  // Time fields
+  time?: string;
+  duration?: string;
+  timezone?: string;
+  
+  // Common details
+  bookedThrough?: string;
+  confirmationNumber?: string;
+  
+  // Category-specific fields
+  // Hotel fields
+  roomBedType?: string;
+  hotelType?: string;
+  
+  // Activity fields
+  provider?: string;
+  
+  // Flight fields
+  from?: string;
+  to?: string;
+  airlines?: string;
+  terminal?: string;
+  gate?: string;
+  flightNumber?: string;
+  
+  // Transport fields
+  carrier?: string;
+  transportNumber?: string;
+  
+  // Cruise fields
+  cabinType?: string;
+  cabinNumber?: string;
+  
+  // Price
+  amount?: number;
+  currency?: string;
 }
 
 interface EventModalProps {
@@ -21,6 +59,329 @@ interface EventModalProps {
   onSave: (event: Event) => void;
   onAddToLibrary: (event: Event) => void;
 }
+
+// Category-specific form components
+const CategorySpecificForm: React.FC<{
+  category: string;
+  formData: Omit<Event, 'id'>;
+  setFormData: React.Dispatch<React.SetStateAction<Omit<Event, 'id'>>>;
+}> = ({ category, formData, setFormData }) => {
+  const updateField = (field: keyof Event, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const renderSubCategories = () => {
+    switch (category) {
+      case 'Activity':
+        return (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => updateField('subCategory', 'Activity')}
+              className={`px-4 py-2 rounded-lg border transition-colors flex items-center gap-2 ${
+                formData.subCategory === 'Activity'
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <Calendar className="h-4 w-4" />
+              Activity
+            </button>
+            <button
+              type="button"
+              onClick={() => updateField('subCategory', 'Food/Drink')}
+              className={`px-4 py-2 rounded-lg border transition-colors flex items-center gap-2 ${
+                formData.subCategory === 'Food/Drink'
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <Utensils className="h-4 w-4" />
+              Food/Drink
+            </button>
+          </div>
+        );
+      case 'Transport':
+        return (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => updateField('subCategory', 'Train')}
+              className={`px-4 py-2 rounded-lg border transition-colors flex items-center gap-2 ${
+                formData.subCategory === 'Train'
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <Car className="h-4 w-4" />
+              Train
+            </button>
+            <button
+              type="button"
+              onClick={() => updateField('subCategory', 'Car Rental')}
+              className={`px-4 py-2 rounded-lg border transition-colors flex items-center gap-2 ${
+                formData.subCategory === 'Car Rental'
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <Car className="h-4 w-4" />
+              Car Rental
+            </button>
+            <button
+              type="button"
+              onClick={() => updateField('subCategory', 'Other')}
+              className={`px-4 py-2 rounded-lg border transition-colors flex items-center gap-2 ${
+                formData.subCategory === 'Other'
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <Car className="h-4 w-4" />
+              Other
+            </button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderTypeSelection = () => {
+    if (category === 'Hotel') {
+      return (
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="type"
+              value="Check In"
+              checked={formData.type === 'Check In'}
+              onChange={(e) => updateField('type', e.target.value)}
+              className="text-purple-600"
+            />
+            Check In
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="type"
+              value="Check Out"
+              checked={formData.type === 'Check Out'}
+              onChange={(e) => updateField('type', e.target.value)}
+              className="text-purple-600"
+            />
+            Check Out
+          </label>
+        </div>
+      );
+    } else if (['Flights', 'Transport', 'Cruise'].includes(category)) {
+      return (
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="type"
+              value="Departure"
+              checked={formData.type === 'Departure'}
+              onChange={(e) => updateField('type', e.target.value)}
+              className="text-purple-600"
+            />
+            Departure
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="type"
+              value="Arrival"
+              checked={formData.type === 'Arrival'}
+              onChange={(e) => updateField('type', e.target.value)}
+              className="text-purple-600"
+            />
+            Arrival
+          </label>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderSpecificFields = () => {
+    switch (category) {
+      case 'Hotel':
+        return (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Room/Bed Type</label>
+              <Input
+                value={formData.roomBedType || ''}
+                onChange={(e) => updateField('roomBedType', e.target.value)}
+                placeholder="e.g. king"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Hotel Type</label>
+              <Input
+                value={formData.hotelType || '5 Star'}
+                onChange={(e) => updateField('hotelType', e.target.value)}
+                placeholder="e.g. 5 Star"
+              />
+            </div>
+          </div>
+        );
+      case 'Activity':
+        return (
+          <div>
+            <label className="block text-sm font-medium mb-2">Provider</label>
+            <Input
+              value={formData.provider || ''}
+              onChange={(e) => updateField('provider', e.target.value)}
+              placeholder="Black Car NY"
+            />
+          </div>
+        );
+      case 'Flights':
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">From</label>
+                <Input
+                  value={formData.from || ''}
+                  onChange={(e) => updateField('from', e.target.value)}
+                  placeholder="Departure city"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">To</label>
+                <Input
+                  value={formData.to || ''}
+                  onChange={(e) => updateField('to', e.target.value)}
+                  placeholder="Arrival city"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Airlines</label>
+                <Input
+                  value={formData.airlines || ''}
+                  onChange={(e) => updateField('airlines', e.target.value)}
+                  placeholder="Black Car NY"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Terminal</label>
+                <Input
+                  value={formData.terminal || ''}
+                  onChange={(e) => updateField('terminal', e.target.value)}
+                  placeholder="e.g.3"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Gate</label>
+                <Input
+                  value={formData.gate || ''}
+                  onChange={(e) => updateField('gate', e.target.value)}
+                  placeholder="e.g.A3"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Flight Number</label>
+              <Input
+                value={formData.flightNumber || ''}
+                onChange={(e) => updateField('flightNumber', e.target.value)}
+                placeholder="e.g.407"
+              />
+            </div>
+          </div>
+        );
+      case 'Transport':
+        return (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Carrier</label>
+              <Input
+                value={formData.carrier || ''}
+                onChange={(e) => updateField('carrier', e.target.value)}
+                placeholder="Black Car NY"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                {formData.subCategory === 'Train' ? 'Train Number' : 'Number'}
+              </label>
+              <Input
+                value={formData.transportNumber || ''}
+                onChange={(e) => updateField('transportNumber', e.target.value)}
+                placeholder="e.g. 407"
+              />
+            </div>
+          </div>
+        );
+      case 'Cruise':
+        return (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Carrier</label>
+              <Input
+                value={formData.carrier || ''}
+                onChange={(e) => updateField('carrier', e.target.value)}
+                placeholder="Black Car NY"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Cabin Type</label>
+              <Input
+                value={formData.cabinType || ''}
+                onChange={(e) => updateField('cabinType', e.target.value)}
+                placeholder="e.g. deluxe"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Cabin Number</label>
+              <Input
+                value={formData.cabinNumber || ''}
+                onChange={(e) => updateField('cabinNumber', e.target.value)}
+                placeholder="e.g. 407"
+              />
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Sub-Category Selection */}
+      {renderSubCategories() && (
+        <div>
+          <label className="block text-sm font-medium mb-2">Sub-Category</label>
+          {renderSubCategories()}
+        </div>
+      )}
+
+      {/* Type Selection */}
+      {renderTypeSelection() && (
+        <div>
+          <label className="block text-sm font-medium mb-2">Type</label>
+          {renderTypeSelection()}
+        </div>
+      )}
+
+      {/* Category-specific fields */}
+      {renderSpecificFields() && (
+        <div>
+          <label className="block text-sm font-medium mb-2">Details</label>
+          {renderSpecificFields()}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const EventModal: React.FC<EventModalProps> = ({
   event,
@@ -35,19 +396,47 @@ export const EventModal: React.FC<EventModalProps> = ({
     notes: '',
     images: [],
     isInLibrary: false,
+    time: '',
+    duration: '',
+    timezone: 'IST (Kolkata, Calcutta)',
+    bookedThrough: '',
+    confirmationNumber: '',
+    amount: 0,
+    currency: '₹ (INR)',
   });
 
-  const [newImage, setNewImage] = useState<File | null>(null);
+
 
   useEffect(() => {
     if (event) {
       setFormData({
         category: event.category,
-        subCategory: event.subCategory,
+        subCategory: event.subCategory || 'Info',
+        type: event.type,
         title: event.title,
         notes: event.notes,
         images: event.images,
         isInLibrary: event.isInLibrary,
+        time: event.time || '',
+        duration: event.duration || '',
+        timezone: event.timezone || 'IST (Kolkata, Calcutta)',
+        bookedThrough: event.bookedThrough || '',
+        confirmationNumber: event.confirmationNumber || '',
+        roomBedType: event.roomBedType || '',
+        hotelType: event.hotelType || '',
+        provider: event.provider || '',
+        from: event.from || '',
+        to: event.to || '',
+        airlines: event.airlines || '',
+        terminal: event.terminal || '',
+        gate: event.gate || '',
+        flightNumber: event.flightNumber || '',
+        carrier: event.carrier || '',
+        transportNumber: event.transportNumber || '',
+        cabinType: event.cabinType || '',
+        cabinNumber: event.cabinNumber || '',
+        amount: event.amount || 0,
+        currency: event.currency || '₹ (INR)',
       });
     }
   }, [event]);
@@ -132,31 +521,12 @@ export const EventModal: React.FC<EventModalProps> = ({
             </div>
           </div>
 
-          {/* Sub-Category Selection */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Sub-Category</label>
-            <div className="flex flex-wrap gap-2">
-              {(['Info', 'City Guide'] as const).map((subCategory) => (
-                <button
-                  key={subCategory}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, subCategory })}
-                  className={`px-4 py-2 rounded-lg border transition-colors flex items-center gap-2 ${
-                    formData.subCategory === subCategory
-                      ? 'bg-purple-600 text-white border-purple-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  {subCategory === 'Info' ? (
-                    <Info className="h-4 w-4" />
-                  ) : (
-                    <FileText className="h-4 w-4" />
-                  )}
-                  {subCategory}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Category-specific form fields */}
+          <CategorySpecificForm
+            category={formData.category}
+            formData={formData}
+            setFormData={setFormData}
+          />
 
           {/* Title */}
           <div>
@@ -181,6 +551,96 @@ export const EventModal: React.FC<EventModalProps> = ({
                 placeholder="Start typing here..."
               />
             </ErrorBoundary>
+          </div>
+
+          {/* Check-in Time */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Check-in Time</label>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Time</label>
+                <Input
+                  value={formData.time || ''}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  placeholder="add a time"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Duration</label>
+                <Input
+                  value={formData.duration || ''}
+                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                  placeholder="e.g. 2 hrs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Timezone</label>
+                <select
+                  value={formData.timezone || 'IST (Kolkata, Calcutta)'}
+                  onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="IST (Kolkata, Calcutta)">IST (Kolkata, Calcutta)</option>
+                  <option value="UTC">UTC</option>
+                  <option value="EST (New York)">EST (New York)</option>
+                  <option value="PST (Los Angeles)">PST (Los Angeles)</option>
+                  <option value="GMT (London)">GMT (London)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Details */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Details</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Booked Through</label>
+                <Input
+                  value={formData.bookedThrough || ''}
+                  onChange={(e) => setFormData({ ...formData, bookedThrough: e.target.value })}
+                  placeholder="e.g. Expedia"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Confirmation #</label>
+                <Input
+                  value={formData.confirmationNumber || ''}
+                  onChange={(e) => setFormData({ ...formData, confirmationNumber: e.target.value })}
+                  placeholder="e.g. 345678"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Price */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Price</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Amount</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.amount || 0}
+                  onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Currency</label>
+                <select
+                  value={formData.currency || '₹ (INR)'}
+                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="₹ (INR)">₹ (INR)</option>
+                  <option value="$ (USD)">$ (USD)</option>
+                  <option value="€ (EUR)">€ (EUR)</option>
+                  <option value="£ (GBP)">£ (GBP)</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* Images */}
