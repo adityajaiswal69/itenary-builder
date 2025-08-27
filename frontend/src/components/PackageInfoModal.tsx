@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { X, Plus } from 'lucide-react';
 import type { Package } from '../services/api';
-import { RichTextEditor } from './RichTextEditor';
+import { TipTapEditor } from './TipTapEditor';
 import { ErrorBoundary } from './ErrorBoundary';
 
 interface PackageInfoModalProps {
@@ -217,7 +217,7 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
           <div>
             <label className="block text-sm font-medium mb-2">Package Description</label>
             <ErrorBoundary>
-              <RichTextEditor
+              <TipTapEditor
                 value={formData.description}
                 onChange={(value) => setFormData({ ...formData, description: value })}
                 placeholder="Enter package description..."

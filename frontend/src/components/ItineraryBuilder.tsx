@@ -25,7 +25,7 @@ import {
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { itineraryApi, packageApi } from '../services/api';
 import type { Itinerary, Package as PackageType } from '../services/api';
-import { RichTextEditor } from './RichTextEditor';
+import { TipTapEditor } from './TipTapEditor';
 import { PackageInfoModal } from './PackageInfoModal';
 import { EventModal } from './EventModal';
 

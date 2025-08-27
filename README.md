@@ -60,7 +60,7 @@ frontend/
 │   │   ├── ItineraryViewer.tsx       # Public share view
 │   │   ├── PackageInfoModal.tsx      # Package management modal
 │   │   ├── EventModal.tsx            # Event creation/editing modal
-│   │   ├── RichTextEditor.tsx        # WYSIWYG text editor
+│   │   ├── TipTapEditor.tsx          # Modern rich text editor
 │   │   ├── Login.tsx                 # Authentication
 │   │   ├── Register.tsx              # User registration
 │   │   └── ui/                       # shadcn/ui components

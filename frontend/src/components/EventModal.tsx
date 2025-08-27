@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { X, Plus, Camera, Info, FileText } from 'lucide-react';
-import { RichTextEditor } from './RichTextEditor';
+import { TipTapEditor } from './TipTapEditor';
 import { ErrorBoundary } from './ErrorBoundary';
 
 interface Event {
@@ -175,7 +175,7 @@ export const EventModal: React.FC<EventModalProps> = ({
           <div>
             <label className="block text-sm font-medium mb-2">Notes</label>
             <ErrorBoundary>
-              <RichTextEditor
+              <TipTapEditor
                 value={formData.notes}
                 onChange={(value) => setFormData({ ...formData, notes: value })}
                 placeholder="Start typing here..."
