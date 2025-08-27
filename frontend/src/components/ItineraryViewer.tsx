@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { ArrowLeft, Package, MapPin, Calendar, DollarSign, Download, Mail, Phone, Info } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Calendar, DollarSign, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { shareApi } from '../services/api';
 import type { Itinerary } from '../services/api';
 
@@ -27,6 +27,17 @@ export const ItineraryViewer: React.FC = () => {
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imageSlider, setImageSlider] = useState<{
+    isOpen: boolean;
+    images: string[];
+    currentIndex: number;
+    title: string;
+  }>({
+    isOpen: false,
+    images: [],
+    currentIndex: 0,
+    title: ''
+  });
 
   useEffect(() => {
     if (shareUuid) {
@@ -63,6 +74,50 @@ export const ItineraryViewer: React.FC = () => {
     // Implement PDF download functionality
     alert('PDF download functionality coming soon!');
   };
+
+  const openImageSlider = (images: string[], initialIndex: number = 0, title: string = '') => {
+    setImageSlider({
+      isOpen: true,
+      images,
+      currentIndex: initialIndex,
+      title
+    });
+  };
+
+  const closeImageSlider = () => {
+    setImageSlider(prev => ({ ...prev, isOpen: false }));
+  };
+
+  const nextImage = () => {
+    setImageSlider(prev => ({
+      ...prev,
+      currentIndex: (prev.currentIndex + 1) % prev.images.length
+    }));
+  };
+
+  const prevImage = () => {
+    setImageSlider(prev => ({
+      ...prev,
+      currentIndex: prev.currentIndex === 0 ? prev.images.length - 1 : prev.currentIndex - 1
+    }));
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!imageSlider.isOpen) return;
+    
+    if (e.key === 'Escape') {
+      closeImageSlider();
+    } else if (e.key === 'ArrowRight') {
+      nextImage();
+    } else if (e.key === 'ArrowLeft') {
+      prevImage();
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [imageSlider.isOpen]);
 
   if (loading) {
     return (
@@ -118,9 +173,17 @@ export const ItineraryViewer: React.FC = () => {
 
       <div className="max-w-4xl mx-auto">
         {/* Banner Section */}
-        <div className="relative h-64 bg-gradient-to-r from-red-500 via-orange-500 to-blue-500 rounded-lg mb-8 overflow-hidden">
-          {/* Banner Image or Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-red-600/80 via-orange-500/80 to-blue-600/80"></div>
+        <div className="relative h-64  rounded-lg mb-8 overflow-hidden">
+          {/* Cover Image Background */}
+          {itinerary.cover_image && (
+            <div 
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${itinerary.cover_image})` }}
+            />
+          )}
+          
+          {/* Gradient Overlay for Text Readability */}
+          <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/30 to-transparent"></div>
           
           {/* Contact Details Overlay */}
           <div className="absolute top-4 left-4 right-4 flex justify-between text-white text-sm">
@@ -203,7 +266,8 @@ export const ItineraryViewer: React.FC = () => {
                               key={index}
                               src={image}
                               alt={`Event ${index + 1}`}
-                              className="w-full h-24 object-cover rounded"
+                              className="w-full h-32 object-contain rounded cursor-pointer hover:opacity-80 transition-opacity bg-gray-50"
+                              onClick={() => openImageSlider(event.images, index, `${event.title} - ${day.title}`)}
                             />
                           ))}
                         </div>
@@ -291,6 +355,62 @@ export const ItineraryViewer: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Image Slider Modal */}
+      {imageSlider.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+          <div className="relative w-full h-full flex items-center justify-center">
+            {/* Close Button */}
+            <button
+              onClick={closeImageSlider}
+              className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
+            >
+              <X className="h-8 w-8" />
+            </button>
+
+            {/* Navigation Arrows */}
+            {imageSlider.images.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 z-10"
+                >
+                  <ChevronLeft className="h-12 w-12" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 z-10"
+                >
+                  <ChevronRight className="h-12 w-12" />
+                </button>
+              </>
+            )}
+
+            {/* Image */}
+            <div className="max-w-4xl max-h-full p-4">
+              <img
+                src={imageSlider.images[imageSlider.currentIndex]}
+                alt={`Image ${imageSlider.currentIndex + 1}`}
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+
+            {/* Image Counter */}
+            {imageSlider.images.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-lg">
+                {imageSlider.currentIndex + 1} / {imageSlider.images.length}
+              </div>
+            )}
+
+            {/* Title */}
+            {imageSlider.title && (
+              <div className="absolute top-4 left-4 text-white text-lg font-medium">
+                {imageSlider.title}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
