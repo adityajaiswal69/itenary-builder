@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { ArrowLeft, Package, MapPin, Calendar, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, Utensils } from 'lucide-react';
 import { shareApi } from '../services/api';
 import type { Itinerary } from '../services/api';
+import { usePDFGenerator } from './PDFGenerator';
 
 interface Day {
   id: string;
@@ -76,6 +77,8 @@ export const ItineraryViewer: React.FC = () => {
     currentIndex: 0,
     title: ''
   });
+  const [selectedPackageIndex] = useState(0);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   useEffect(() => {
     if (shareUuid) {
@@ -109,9 +112,18 @@ export const ItineraryViewer: React.FC = () => {
     }
   };
 
-  const downloadPDF = () => {
-    // Implement PDF download functionality
-    alert('PDF download functionality coming soon!');
+  // Handle PDF download
+  const handleDownloadPDF = async () => {
+    if (!itinerary) return;
+    
+    const currentPackage = itinerary.packages?.[selectedPackageIndex] || itinerary.packages?.[0];
+    const { downloadPDF } = usePDFGenerator({
+      itinerary,
+      currentPackage,
+      onGenerating: setIsGeneratingPDF
+    });
+    
+    await downloadPDF();
   };
 
   const openImageSlider = (images: string[], initialIndex: number = 0, title: string = '') => {
@@ -345,9 +357,14 @@ export const ItineraryViewer: React.FC = () => {
             <div className="w-8 h-8 bg-gray-200 rounded"></div>
             <span className="text-lg font-semibold">aditya</span>
           </div>
-          <Button onClick={downloadPDF} className="bg-green-600 hover:bg-green-700 border-green-500">
+          <Button 
+            onClick={handleDownloadPDF} 
+            className="bg-green-600 hover:bg-green-700 border-green-500" 
+            disabled={isGeneratingPDF}
+            data-download-btn
+          >
             <Download className="h-4 w-4 mr-2" />
-            Download Pdf
+            {isGeneratingPDF ? 'Generating PDF...' : 'Download PDF'}
           </Button>
         </div>
       </div>
