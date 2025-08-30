@@ -34,11 +34,13 @@ function App() {
   }, []);
 
   const handleLogin = (token: string, userData: any) => {
+    localStorage.setItem('auth_token', token);
     setUser(userData);
     setIsAuthenticated(true);
   };
 
   const handleRegister = (token: string, userData: any) => {
+    localStorage.setItem('auth_token', token);
     setUser(userData);
     setIsAuthenticated(true);
   };
@@ -74,6 +76,7 @@ function App() {
                 path="/" 
                 element={
                   <PackagesList 
+                    user={user}
                     onLogout={handleLogout}
                     onCreatePackage={() => window.location.href = '/create-package'}
                     onEditPackage={(packageId) => window.location.href = `/edit-package/${packageId}`}

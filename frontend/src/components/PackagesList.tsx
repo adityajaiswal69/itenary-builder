@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { 
@@ -12,21 +11,28 @@ import {
   Package, 
   LogOut,
   HelpCircle,
-  Bell,
+  // Bell,
   User,
-  Search,
   ChevronDown
 } from 'lucide-react';
 import { packageApi } from '../services/api';
 import type { Package as PackageType } from '../services/api';
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
 interface PackagesListProps {
+  user: User | null;
   onLogout: () => void;
   onCreatePackage: () => void;
   onEditPackage: (packageId: string) => void;
 }
 
 export const PackagesList: React.FC<PackagesListProps> = ({ 
+  user,
   onLogout, 
   onCreatePackage, 
   onEditPackage 
@@ -127,8 +133,8 @@ export const PackagesList: React.FC<PackagesListProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-red-500 rounded"></div>
-              <span className="text-xl font-bold text-gray-800">tripclap</span>
+              {/* <div className="w-8 h-8 bg-red-500 rounded"></div> */}
+              <span className="text-xl font-bold text-gray-800">Itinerary Manager</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -136,18 +142,18 @@ export const PackagesList: React.FC<PackagesListProps> = ({
               <HelpCircle className="h-4 w-4 mr-2" />
               Help & Support
             </Button>
-            <div className="relative">
+            {/* <div className="relative">
               <Button variant="ghost" size="sm">
                 <Bell className="h-4 w-4" />
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   1
                 </span>
               </Button>
-            </div>
+            </div> */}
             <div className="flex items-center gap-2">
               <div className="text-right">
-                <p className="text-sm font-medium">Aditya Jaiswal</p>
-                <p className="text-xs text-gray-500">Credits: 0</p>
+                <p className="text-sm font-medium">{user?.name || 'Guest'}</p>
+                
               </div>
               <User className="h-8 w-8 text-gray-400" />
             </div>
