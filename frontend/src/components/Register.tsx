@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { User, Lock, Mail, UserPlus } from 'lucide-react';
+import { User, Lock, Mail, UserPlus, Phone } from 'lucide-react';
 import api from '../services/api';
 
 interface RegisterProps {
@@ -13,6 +13,7 @@ interface RegisterProps {
 export const Register: React.FC<RegisterProps> = ({ onRegister, onSwitchToLogin }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,7 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onSwitchToLogin 
       const response = await api.post('/register', {
         name,
         email,
+        phone,
         password,
         password_confirmation: passwordConfirmation,
       });
@@ -100,6 +102,23 @@ export const Register: React.FC<RegisterProps> = ({ onRegister, onSwitchToLogin 
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
                   required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="phone" className="text-sm font-medium">
+                Phone Number
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="Enter your phone number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="pl-10"
                 />
               </div>
             </div>

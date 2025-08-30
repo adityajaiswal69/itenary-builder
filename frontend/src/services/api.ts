@@ -50,6 +50,12 @@ export interface Itinerary {
   created_at: string;
   updated_at: string;
   packages?: Package[];
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+  };
 }
 
 export interface Package {

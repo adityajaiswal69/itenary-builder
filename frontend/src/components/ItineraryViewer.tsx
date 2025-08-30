@@ -89,6 +89,7 @@ export const ItineraryViewer: React.FC = () => {
       console.log('Loading itinerary for shareUuid:', shareUuid);
       const response = await shareApi.getByShareUuid(shareUuid!);
       console.log('Itinerary loaded successfully:', response.data);
+      console.log('User data in itinerary:', response.data.user);
       setItinerary(response.data);
     } catch (error: any) {
       console.error('Failed to load itinerary:', error);
@@ -367,14 +368,19 @@ export const ItineraryViewer: React.FC = () => {
           
           {/* Contact Details Overlay */}
           <div className="absolute top-4 left-4 right-4 flex justify-between text-white text-sm">
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              <span>jaiszaditya@gmail.com</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4" />
-              <span>8327693057</span>
-            </div>
+            {itinerary.user?.email && (
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                <span>{itinerary.user.email}</span>
+              </div>
+            )}
+            {itinerary.user?.phone && (
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4" />
+                <span>{itinerary.user.phone}</span>
+              </div>
+            )}
+
           </div>
 
           {/* Package Title and Price Overlay */}
