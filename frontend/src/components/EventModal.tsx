@@ -634,10 +634,16 @@ export const EventModal: React.FC<EventModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
-                  <option value="₹ (INR)">₹ (INR)</option>
-                  <option value="$ (USD)">$ (USD)</option>
-                  <option value="€ (EUR)">€ (EUR)</option>
-                  <option value="£ (GBP)">£ (GBP)</option>
+                    <option value="INR">₹ (INR)</option>
+                    <option value="CAD">$ (CAD)</option>
+                    <option value="CHF">Fr (CHF)</option>
+                    <option value="EUR">€ (EUR)</option>
+                    <option value="GBP">£ (GBP)</option>
+                    <option value="JPY">¥ (JPY)</option>
+                    <option value="MXN">$ (MXN)</option>
+                    <option value="NZD">$ (NZD)</option>
+                    <option value="USD">$ (USD)</option>
+
                 </select>
               </div>
             </div>

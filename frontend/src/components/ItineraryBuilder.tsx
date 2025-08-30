@@ -28,6 +28,7 @@ import type { Itinerary, Package as PackageType } from '../services/api';
 
 import { PackageInfoModal } from './PackageInfoModal';
 import { EventModal } from './EventModal';
+import { packageStorage } from '../lib/packageStorage';
 
 interface Day {
   id: string;
@@ -182,6 +183,11 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
       setSelectedDayIndex(0);
       setError(null);
       setSuccessMessage(null);
+      
+      // Clear any stale localStorage data since we now have a real package
+      if (packageData.id) {
+        packageStorage.clearOnPackageCreated();
+      }
     } catch (error) {
       console.error('Failed to load package for editing:', error);
       setError('Failed to load package');
@@ -378,6 +384,8 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
             const packageResponse = await packageApi.create(packageData);
             console.log('Package created successfully:', packageResponse.data);
             setPendingPackageData(null);
+            // Clear localStorage since package is now successfully created
+            packageStorage.clearOnPackageCreated();
             setSuccessMessage('Package published successfully!');
           } else if (isCreating && !currentPackage) {
             // Create default package for new itinerary
@@ -402,6 +410,8 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
             console.log('Creating default package:', packageData);
             const packageResponse = await packageApi.create(packageData);
             console.log('Default package created successfully:', packageResponse.data);
+            // Clear localStorage since package is now successfully created
+            packageStorage.clearOnPackageCreated();
             setSuccessMessage('Default package published successfully!');
           }
         } catch (packageError) {
@@ -1119,10 +1129,15 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                                  setPendingPackageData({
                    title: pkg.title || title,
                    start_location: pkg.start_location || 'TBD',
-                   valid_till: pkg.valid_till || new Date().toISOString().split('T')[0],
+                   valid_till: pkg.valid_till || (() => {
+                     const tomorrow = new Date();
+                     tomorrow.setDate(tomorrow.getDate() + 1);
+                     return tomorrow.toISOString().split('T')[0];
+                   })(),
                    description: pkg.description || [{ content: 'Package description will be added here.' }],
                    price: pkg.price || 0,
                    price_type: pkg.price_type || 'per_person',
+                   people: pkg.people || undefined,
                    locations: pkg.locations && pkg.locations.length > 0 ? pkg.locations : ['TBD'],
                    inclusions: pkg.inclusions && pkg.inclusions.length > 0 ? pkg.inclusions : ['TBD'],
                    exclusions: pkg.exclusions && pkg.exclusions.length > 0 ? pkg.exclusions : ['TBD'],

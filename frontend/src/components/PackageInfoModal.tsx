@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { X, Plus } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { Package } from '../services/api';
 import { TipTapEditor } from './TipTapEditor';
 import { ErrorBoundary } from './ErrorBoundary';
+import { packageStorage } from '../lib/packageStorage';
 
 interface PackageInfoModalProps {
   package?: Package | null;
@@ -26,6 +27,7 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
     description: '',
     price: '',
     price_type: 'per_person' as 'per_person' | 'total',
+    people: '',
     currency: '₹ (INR)',
     is_published: false,
     locations: [] as string[],
@@ -34,11 +36,68 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
   });
 
   const [newLocation, setNewLocation] = useState('');
-  const [newInclusion, setNewInclusion] = useState('');
-  const [newExclusion, setNewExclusion] = useState('');
+  const [selectedInclusion, setSelectedInclusion] = useState('');
+  const [selectedExclusion, setSelectedExclusion] = useState('');
+
+  // Predefined inclusion options
+  const inclusionOptions = [
+    'Breakfast',
+    'Lunch', 
+    'Dinner',
+    'Air Fare',
+    'Airport transfers',
+    'Private Cab Transfers',
+    'Volvo Transfers',
+    'Sightseeing tour',
+    'Accommodation',
+    'Welcome Drinks',
+    'Outdoor activities',
+    'Early check-in & late checkout',
+    'All meals',
+    'Professional guide',
+    'Entry tickets',
+    'Travel insurance',
+    'Wi-Fi access',
+    'Photography services'
+  ];
+
+  // Predefined exclusion options  
+  const exclusionOptions = [
+    'Taxes',
+    'TOLLS',
+    'Personal expenses',
+    'Tips and gratuities',
+    'Optional activities',
+    'Alcoholic beverages',
+    'Laundry services',
+    'Room service',
+    'Medical expenses',
+    'Emergency evacuation',
+    'Visa fees',
+    'Additional meals',
+    'Shopping expenses',
+    'Phone calls',
+    'Spa services',
+    'Adventure activities insurance'
+  ];
+
+  // Helper function to save form data to localStorage (for new packages only)
+  const saveToLocalStorage = (data: typeof formData) => {
+    if (!pkg) { // Only save to localStorage for new packages
+      packageStorage.save(data);
+    }
+  };
+
+  // Helper function to update form data and save to localStorage
+  const updateFormData = (updates: Partial<typeof formData>) => {
+    const updatedData = { ...formData, ...updates };
+    setFormData(updatedData);
+    saveToLocalStorage(updatedData);
+  };
 
   useEffect(() => {
     if (pkg) {
+      // If editing existing package, use package data
       setFormData({
         title: pkg.title,
         start_location: pkg.start_location,
@@ -46,6 +105,7 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
         description: Array.isArray(pkg.description) ? pkg.description[0]?.content || '' : pkg.description,
         price: pkg.price.toString(),
         price_type: pkg.price_type,
+        people: pkg.people ? pkg.people.toString() : '',
         currency: '₹ (INR)',
         is_published: pkg.is_published,
         locations: pkg.locations || [],
@@ -53,76 +113,101 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
         exclusions: pkg.exclusions || [],
       });
     } else {
-      // Initialize with empty data for new package
+      // For new package, try to load from localStorage first
+      const savedData = packageStorage.load();
+      console.log('Loading package data from localStorage:', savedData);
+      
       setFormData({
-        title: tripTitle || '',
-        start_location: '',
-        valid_till: new Date().toISOString().split('T')[0],
-        description: '',
-        price: '',
-        price_type: 'per_person',
-        currency: '₹ (INR)',
-        is_published: false,
-        locations: [],
-        inclusions: [],
-        exclusions: [],
+        title: savedData.title || tripTitle || '',
+        start_location: savedData.start_location || '',
+        valid_till: savedData.valid_till || (() => {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          return tomorrow.toISOString().split('T')[0];
+        })(),
+        description: savedData.description || '',
+        price: savedData.price || '',
+        price_type: savedData.price_type || 'per_person',
+        people: savedData.people || '',
+        currency: savedData.currency || '₹ (INR)',
+        is_published: savedData.is_published || false,
+        locations: savedData.locations || [],
+        inclusions: savedData.inclusions || [],
+        exclusions: savedData.exclusions || [],
       });
     }
-  }, [pkg]);
+  }, [pkg, tripTitle]);
 
   const addLocation = () => {
     if (newLocation.trim() && !formData.locations.includes(newLocation.trim())) {
-      setFormData({
+      const updatedData = {
         ...formData,
         locations: [...formData.locations, newLocation.trim()]
-      });
+      };
+      setFormData(updatedData);
+      saveToLocalStorage(updatedData);
       setNewLocation('');
     }
   };
 
   const removeLocation = (location: string) => {
-    setFormData({
+    const updatedData = {
       ...formData,
       locations: formData.locations.filter(l => l !== location)
-    });
+    };
+    setFormData(updatedData);
+    saveToLocalStorage(updatedData);
   };
 
   const addInclusion = () => {
-    if (newInclusion.trim() && !formData.inclusions.includes(newInclusion.trim())) {
-      setFormData({
+    if (selectedInclusion && !formData.inclusions.includes(selectedInclusion)) {
+      const updatedData = {
         ...formData,
-        inclusions: [...formData.inclusions, newInclusion.trim()]
-      });
-      setNewInclusion('');
+        inclusions: [...formData.inclusions, selectedInclusion]
+      };
+      setFormData(updatedData);
+      saveToLocalStorage(updatedData);
+      setSelectedInclusion('');
     }
   };
 
   const removeInclusion = (inclusion: string) => {
-    setFormData({
+    const updatedData = {
       ...formData,
       inclusions: formData.inclusions.filter(i => i !== inclusion)
-    });
+    };
+    setFormData(updatedData);
+    saveToLocalStorage(updatedData);
   };
 
   const addExclusion = () => {
-    if (newExclusion.trim() && !formData.exclusions.includes(newExclusion.trim())) {
-      setFormData({
+    if (selectedExclusion && !formData.exclusions.includes(selectedExclusion)) {
+      const updatedData = {
         ...formData,
-        exclusions: [...formData.exclusions, newExclusion.trim()]
-      });
-      setNewExclusion('');
+        exclusions: [...formData.exclusions, selectedExclusion]
+      };
+      setFormData(updatedData);
+      saveToLocalStorage(updatedData);
+      setSelectedExclusion('');
     }
   };
 
   const removeExclusion = (exclusion: string) => {
-    setFormData({
+    const updatedData = {
       ...formData,
       exclusions: formData.exclusions.filter(e => e !== exclusion)
-    });
+    };
+    setFormData(updatedData);
+    saveToLocalStorage(updatedData);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // First save to localStorage to ensure data is preserved
+    saveToLocalStorage(formData);
+    
+    // Then trigger the save callback
     onSave({
       title: formData.title,
       start_location: formData.start_location,
@@ -130,11 +215,15 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
       description: [{ content: formData.description }],
       price: parseInt(formData.price),
       price_type: formData.price_type,
+      people: formData.people ? parseInt(formData.people) : undefined,
       locations: formData.locations,
       inclusions: formData.inclusions,
       exclusions: formData.exclusions,
       is_published: formData.is_published,
     });
+    
+    // Note: localStorage will only be cleared when the package is actually created in the backend
+    // This happens in ItineraryBuilder after successful package creation
   };
 
   return (
@@ -142,10 +231,48 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
       <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold">Package Info</h2>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold">Package Info</h2>
+            {!pkg && packageStorage.hasSavedData() && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                Draft Saved
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {!pkg && packageStorage.hasSavedData() && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  packageStorage.clear();
+                  // Reset form to defaults
+                  const tomorrow = new Date();
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  setFormData({
+                    title: tripTitle || '',
+                    start_location: '',
+                    valid_till: tomorrow.toISOString().split('T')[0],
+                    description: '',
+                    price: '',
+                    price_type: 'per_person',
+                    people: '',
+                    currency: '₹ (INR)',
+                    is_published: false,
+                    locations: [],
+                    inclusions: [],
+                    exclusions: [],
+                  });
+                }}
+                className="text-red-600 hover:text-red-700"
+              >
+                Clear Draft
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -158,7 +285,7 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
                   type="radio"
                   name="status"
                   checked={!formData.is_published}
-                  onChange={() => setFormData({ ...formData, is_published: false })}
+                  onChange={() => updateFormData({ is_published: false })}
                 />
                 <span>Unpublished</span>
               </label>
@@ -167,7 +294,7 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
                   type="radio"
                   name="status"
                   checked={formData.is_published}
-                  onChange={() => setFormData({ ...formData, is_published: true })}
+                  onChange={() => updateFormData({ is_published: true })}
                 />
                 <span>Published</span>
               </label>
@@ -181,7 +308,7 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
             </label>
             <Input
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) => updateFormData({ title: e.target.value })}
               placeholder="Enter package title"
               required
             />
@@ -194,7 +321,7 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
             </label>
             <Input
               value={formData.start_location}
-              onChange={(e) => setFormData({ ...formData, start_location: e.target.value })}
+              onChange={(e) => updateFormData({ start_location: e.target.value })}
               placeholder="Enter start location"
               required
             />
@@ -208,7 +335,7 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
             <Input
               type="date"
               value={formData.valid_till}
-              onChange={(e) => setFormData({ ...formData, valid_till: e.target.value })}
+              onChange={(e) => updateFormData({ valid_till: e.target.value })}
               required
             />
           </div>
@@ -219,7 +346,7 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
             <ErrorBoundary>
               <TipTapEditor
                 value={formData.description}
-                onChange={(value) => setFormData({ ...formData, description: value })}
+                onChange={(value) => updateFormData({ description: value })}
                 placeholder="Enter package description..."
               />
             </ErrorBoundary>
@@ -234,19 +361,25 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
               <Input
                 type="number"
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                onChange={(e) => updateFormData({ price: e.target.value })}
                 placeholder="Enter price"
                 required
                 className="flex-1"
               />
               <select
                 value={formData.currency}
-                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                onChange={(e) => updateFormData({ currency: e.target.value })}
                 className="px-3 py-2 border rounded-md"
               >
-                <option value="₹ (INR)">₹ (INR)</option>
-                <option value="$ (USD)">$ (USD)</option>
-                <option value="€ (EUR)">€ (EUR)</option>
+                <option value="INR">₹ (INR)</option>
+                    <option value="CAD">$ (CAD)</option>
+                    <option value="CHF">Fr (CHF)</option>
+                    <option value="EUR">€ (EUR)</option>
+                    <option value="GBP">£ (GBP)</option>
+                    <option value="JPY">¥ (JPY)</option>
+                    <option value="MXN">$ (MXN)</option>
+                    <option value="NZD">$ (NZD)</option>
+                    <option value="USD">$ (USD)</option>
               </select>
             </div>
             <div className="flex gap-4 mt-2">
@@ -255,7 +388,7 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
                   type="radio"
                   name="price_type"
                   checked={formData.price_type === 'per_person'}
-                  onChange={() => setFormData({ ...formData, price_type: 'per_person' })}
+                  onChange={() => updateFormData({ price_type: 'per_person', people: '' })}
                 />
                 <span>Per Person</span>
               </label>
@@ -264,12 +397,29 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
                   type="radio"
                   name="price_type"
                   checked={formData.price_type === 'total'}
-                  onChange={() => setFormData({ ...formData, price_type: 'total' })}
+                  onChange={() => updateFormData({ price_type: 'total' })}
                 />
                 <span>Total</span>
               </label>
             </div>
           </div>
+
+          {/* People Count - Only show when price_type is 'total' */}
+          {formData.price_type === 'total' && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Number of People <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="number"
+                min="1"
+                value={formData.people}
+                onChange={(e) => updateFormData({ people: e.target.value })}
+                placeholder="Enter number of people"
+                required={formData.price_type === 'total'}
+              />
+            </div>
+          )}
 
           {/* Location */}
           <div>
@@ -282,7 +432,7 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addLocation())}
               />
               <Button type="button" onClick={addLocation} variant="outline">
-                <Plus className="h-4 w-4" />
+                Add
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -308,14 +458,27 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
           <div>
             <label className="block text-sm font-medium mb-2">Inclusion</label>
             <div className="flex gap-2 mb-2">
-              <Input
-                value={newInclusion}
-                onChange={(e) => setNewInclusion(e.target.value)}
-                placeholder="Add inclusion"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addInclusion())}
-              />
-              <Button type="button" onClick={addInclusion} variant="outline">
-                <Plus className="h-4 w-4" />
+              <select
+                value={selectedInclusion}
+                onChange={(e) => setSelectedInclusion(e.target.value)}
+                className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="">Select an inclusion...</option>
+                {inclusionOptions
+                  .filter(option => !formData.inclusions.includes(option))
+                  .map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+              </select>
+              <Button 
+                type="button" 
+                onClick={addInclusion} 
+                variant="outline"
+                disabled={!selectedInclusion}
+              >
+                Add
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -341,14 +504,27 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
           <div>
             <label className="block text-sm font-medium mb-2">Exclusion</label>
             <div className="flex gap-2 mb-2">
-              <Input
-                value={newExclusion}
-                onChange={(e) => setNewExclusion(e.target.value)}
-                placeholder="Add exclusion"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addExclusion())}
-              />
-              <Button type="button" onClick={addExclusion} variant="outline">
-                <Plus className="h-4 w-4" />
+              <select
+                value={selectedExclusion}
+                onChange={(e) => setSelectedExclusion(e.target.value)}
+                className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="">Select an exclusion...</option>
+                {exclusionOptions
+                  .filter(option => !formData.exclusions.includes(option))
+                  .map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+              </select>
+              <Button 
+                type="button" 
+                onClick={addExclusion} 
+                variant="outline"
+                disabled={!selectedExclusion}
+              >
+                Add
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">

@@ -61,6 +61,7 @@ export interface Package {
   description: any[];
   price: number;
   price_type: 'per_person' | 'total';
+  people?: number;
   locations: string[];
   inclusions: string[];
   exclusions: string[];

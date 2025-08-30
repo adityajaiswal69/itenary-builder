@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { ArrowLeft, Package, MapPin, Calendar, DollarSign, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, Utensils } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Calendar, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, Utensils } from 'lucide-react';
 import { shareApi } from '../services/api';
 import type { Itinerary } from '../services/api';
 
@@ -285,7 +285,7 @@ export const ItineraryViewer: React.FC = () => {
     if (event.amount && event.amount > 0) {
       details.push(
         <div key="price" className="flex items-center gap-2 text-sm text-green-600 font-medium">
-          <DollarSign className="h-4 w-4" />
+          {/* <DollarSign className="h-4 w-4" /> */}
           <span>{event.currency || '₹ (INR)'} {event.amount.toLocaleString()}</span>
         </div>
       );
@@ -495,10 +495,11 @@ export const ItineraryViewer: React.FC = () => {
                 <span>Valid till: {new Date(currentPackage.valid_till).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-gray-500" />
+                {/* <DollarSign className="h-4 w-4 text-gray-500" /> */}
                 <span>
                   ₹{currentPackage.price.toLocaleString()} 
-                  {currentPackage.price_type === 'per_person' ? ' per person' : ' total'}
+                  {currentPackage.price_type === 'per_person' ? ' per person' : 
+                   ` total${currentPackage.people ? ` (${currentPackage.people} people)` : ''}`}
                 </span>
               </div>
             </div>
