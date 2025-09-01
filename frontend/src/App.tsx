@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { PackagesList } from './components/PackagesList';
 import { ItineraryBuilder } from './components/ItineraryBuilder';
 import { ItineraryViewer } from './components/ItineraryViewer';
+import { ItineraryViewerIframe } from './components/ItineraryViewerIframe';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import api from './services/api';
@@ -68,6 +69,7 @@ function App() {
         <Routes>
           {/* Public routes - accessible without authentication */}
           <Route path="/share/:shareUuid" element={<ItineraryViewer />} />
+          <Route path="/iframe/:shareUuid" element={<ItineraryViewerIframe />} />
           
           {/* Protected routes - require authentication */}
           {isAuthenticated ? (

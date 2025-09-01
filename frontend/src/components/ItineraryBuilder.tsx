@@ -426,12 +426,60 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     setLoading(true);
     setError(null);
     try {
-      const itineraryData = {
+      // Sanitize the days data to ensure it can be serialized
+      const sanitizedDays = days.map(day => ({
+        id: day.id,
+        title: day.title,
+        date: day.date,
+        events: day.events.map(event => ({
+          id: event.id,
+          category: event.category,
+          subCategory: event.subCategory,
+          type: event.type,
+          title: event.title,
+          notes: event.notes,
+          images: Array.isArray(event.images) ? event.images : [],
+          isInLibrary: Boolean(event.isInLibrary),
+          time: event.time,
+          duration: event.duration,
+          timezone: event.timezone,
+          bookedThrough: event.bookedThrough,
+          confirmationNumber: event.confirmationNumber,
+          roomBedType: event.roomBedType,
+          hotelType: event.hotelType,
+          provider: event.provider,
+          from: event.from,
+          to: event.to,
+          airlines: event.airlines,
+          terminal: event.terminal,
+          gate: event.gate,
+          flightNumber: event.flightNumber,
+          carrier: event.carrier,
+          transportNumber: event.transportNumber,
+          cabinType: event.cabinType,
+          cabinNumber: event.cabinNumber,
+          amount: typeof event.amount === 'number' ? event.amount : undefined,
+          currency: event.currency
+        }))
+      }));
+
+      // Final validation before sending
+      if (coverImage && coverImage.length > 60000) {
+        setError('Cover image is too large. Please select a smaller image or compress it further.');
+        setLoading(false);
+        return;
+      }
+
+      const itineraryData: any = {
         title,
-        content: { days },
-        cover_image: coverImage || undefined,
+        content: { days: sanitizedDays },
         is_published: currentItinerary?.is_published || false,
       };
+      
+      // Only include cover_image if it has a value
+      if (coverImage) {
+        itineraryData.cover_image = coverImage;
+      }
 
       let savedItinerary;
       if (currentItinerary) {
@@ -442,11 +490,15 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
 
       // Update package with itinerary_id, title, and cover image
       if (currentPackage && savedItinerary.data) {
-        const packageUpdateData = {
+        const packageUpdateData: any = {
           itinerary_id: savedItinerary.data.id,
           title: title, // Sync package title with itinerary title
-          cover_image: coverImage || undefined, // Sync cover image
         };
+        
+        // Only include cover_image if it has a value
+        if (coverImage) {
+          packageUpdateData.cover_image = coverImage;
+        }
         
         await packageApi.update(currentPackage.id, packageUpdateData);
       }
@@ -470,7 +522,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
              const tomorrow = new Date();
              tomorrow.setDate(tomorrow.getDate() + 1);
              
-             const packageData = {
+             const packageData: any = {
                itinerary_id: savedItinerary.data.id,
                title: title,
                start_location: 'TBD', // Required field, can't be empty
@@ -481,9 +533,13 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                locations: ['TBD'], // Required array, can't be empty
                inclusions: ['TBD'], // Required array, can't be empty
                exclusions: ['TBD'], // Required array, can't be empty
-               cover_image: coverImage || undefined,
                is_published: false,
              };
+             
+             // Only include cover_image if it has a value
+             if (coverImage) {
+               packageData.cover_image = coverImage;
+             }
              
              console.log('Creating default package:', packageData);
              const packageResponse = await packageApi.create(packageData);
@@ -505,9 +561,19 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
          // Navigate back to packages list
          navigate('/');
        }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save itinerary:', error);
-      setError('Failed to save itinerary');
+      
+      // Provide more specific error messages
+      if (error.response?.data?.error) {
+        setError(error.response.data.error);
+      } else if (error.response?.status === 400) {
+        setError('Invalid data provided. Please check your input and try again.');
+      } else if (error.response?.status === 500) {
+        setError('Server error occurred. Please try again or contact support.');
+      } else {
+        setError('Failed to save itinerary. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -517,7 +583,35 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
 
 
 
-  const handleCoverImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.6): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedDataUrl);
+      };
+      
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleCoverImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log('Cover image change event:', event.target.files);
     const file = event.target.files?.[0];
     if (file) {
@@ -535,21 +629,36 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
         return;
       }
       
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        console.log('File loaded successfully');
-        setCoverImage(e.target?.result as string);
+      try {
+        // Try different compression settings to fit within database limits
+        let compressedDataUrl = await compressImage(file, 800, 0.6);
+        
+        // If still too large, try more aggressive compression
+        if (compressedDataUrl.length > 60000) {
+          compressedDataUrl = await compressImage(file, 600, 0.5);
+        }
+        
+        // If still too large, try even more aggressive compression
+        if (compressedDataUrl.length > 60000) {
+          compressedDataUrl = await compressImage(file, 400, 0.4);
+        }
+        
+        // Final check
+        if (compressedDataUrl.length > 60000) {
+          setError('Image is still too large even after maximum compression. Please select a much smaller image.');
+          return;
+        }
+        
+        setCoverImage(compressedDataUrl);
         setError(null); // Clear any previous errors
-        setSuccessMessage('Cover image uploaded successfully!');
+        setSuccessMessage('Cover image uploaded and compressed successfully!');
         setTimeout(() => {
           setSuccessMessage(null);
         }, 3000);
-      };
-      reader.onerror = () => {
-        console.error('File reader error:', reader.error);
-        setError('Failed to load image. Please try again.');
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Image compression failed:', error);
+        setError('Failed to process image. Please try again.');
+      }
     } else {
       console.log('No file selected');
     }
@@ -1091,7 +1200,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                 setTimeout(() => setSuccessMessage(null), 3000);
               } else {
                 // Store package data temporarily to create later when itinerary is saved
-                                 setPendingPackageData({
+                                 const pendingData: any = {
                    title: pkg.title || title,
                    start_location: pkg.start_location || 'TBD',
                    valid_till: pkg.valid_till || (() => {
@@ -1106,9 +1215,15 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                    locations: pkg.locations && pkg.locations.length > 0 ? pkg.locations : ['TBD'],
                    inclusions: pkg.inclusions && pkg.inclusions.length > 0 ? pkg.inclusions : ['TBD'],
                    exclusions: pkg.exclusions && pkg.exclusions.length > 0 ? pkg.exclusions : ['TBD'],
-                   cover_image: coverImage || undefined,
                    is_published: pkg.is_published || false,
-                 });
+                 };
+                 
+                 // Only include cover_image if it has a value
+                 if (coverImage) {
+                   pendingData.cover_image = coverImage;
+                 }
+                 
+                 setPendingPackageData(pendingData);
                 setShowPackageModal(false);
                 setSuccessMessage('Package info saved! Package will be created when you save the itinerary.');
                 setTimeout(() => setSuccessMessage(null), 3000);

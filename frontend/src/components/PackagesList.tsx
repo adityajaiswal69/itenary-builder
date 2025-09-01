@@ -13,7 +13,8 @@ import {
   HelpCircle,
   // Bell,
   User,
-  ChevronDown
+  ChevronDown,
+  Code
 } from 'lucide-react';
 import { packageApi } from '../services/api';
 import type { Package as PackageType } from '../services/api';
@@ -93,6 +94,15 @@ export const PackagesList: React.FC<PackagesListProps> = ({
       throw new Error('Itinerary not published or share link not available');
     }
     return `${window.location.origin}/share/${pkg.itinerary.share_uuid}`;
+  };
+
+  const getIframeCode = (pkg: PackageType) => {
+    // Use the itinerary's share_uuid for the iframe URL
+    if (!pkg.itinerary?.share_uuid) {
+      throw new Error('Itinerary not published or share link not available');
+    }
+    const iframeUrl = `${window.location.origin}/iframe/${pkg.itinerary.share_uuid}`;
+    return `<iframe src="${iframeUrl}" width="100%" height="800" frameborder="0" style="border: none; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"></iframe>`;
   };
 
   const filteredPackages = packages.filter(pkg => {
@@ -328,6 +338,23 @@ export const PackagesList: React.FC<PackagesListProps> = ({
                             >
                               <Share2 className="h-3 w-3 mr-1" />
                               Share
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                try {
+                                  const iframeCode = getIframeCode(pkg);
+                                  navigator.clipboard.writeText(iframeCode);
+                                  alert('Iframe code copied to clipboard! You can now embed this itinerary on any website.');
+                                } catch (error) {
+                                  alert('Cannot copy iframe: Itinerary not published. Please publish the itinerary first.');
+                                }
+                              }}
+                              className="text-xs h-6 px-2"
+                            >
+                              <Code className="h-3 w-3 mr-1" />
+                              Copy Iframe
                             </Button>
                           </div>
                         </div>
