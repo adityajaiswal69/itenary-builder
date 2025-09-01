@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Table } from '@tiptap/extension-table';
@@ -28,8 +28,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   onChange,
   placeholder = 'Start typing here...'
 }) => {
-  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
-  const [linkUrl, setLinkUrl] = useState('');
+
 
   const editor = useEditor({
     extensions: [

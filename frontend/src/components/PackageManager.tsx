@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Plus, Save, Trash2, Package, MapPin, Calendar, DollarSign } from 'lucide-react';
+import { Plus, Save, Trash2, Package as PackageIcon, MapPin, Calendar, DollarSign } from 'lucide-react';
 import { packageApi } from '../services/api';
 import type { Package } from '../services/api';
 
@@ -88,7 +88,7 @@ export const PackageManager: React.FC<PackageManagerProps> = ({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
+            <PackageIcon className="h-5 w-5" />
             Travel Packages
           </CardTitle>
           <Button onClick={() => setShowForm(!showForm)}>
@@ -237,7 +237,7 @@ export const PackageManager: React.FC<PackageManagerProps> = ({
                 <div className="mt-3">
                   <p className="text-sm font-medium mb-1">Locations:</p>
                   <div className="flex flex-wrap gap-1">
-                    {pkg.locations.map((location, index) => (
+                    {pkg.locations.map((location: string, index: number) => (
                       <span
                         key={index}
                         className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
@@ -253,7 +253,7 @@ export const PackageManager: React.FC<PackageManagerProps> = ({
                 <div className="mt-3">
                   <p className="text-sm font-medium mb-1">Inclusions:</p>
                   <ul className="text-xs space-y-1">
-                    {pkg.inclusions.map((inclusion, index) => (
+                    {pkg.inclusions.map((inclusion: string, index: number) => (
                       <li key={index} className="flex items-start gap-2">
                         <span className="text-green-500 mt-1">•</span>
                         <span>{inclusion}</span>
@@ -267,7 +267,7 @@ export const PackageManager: React.FC<PackageManagerProps> = ({
                 <div className="mt-3">
                   <p className="text-sm font-medium mb-1">Exclusions:</p>
                   <ul className="text-xs space-y-1">
-                    {pkg.exclusions.map((exclusion, index) => (
+                    {pkg.exclusions.map((exclusion: string, index: number) => (
                       <li key={index} className="flex items-start gap-2">
                         <span className="text-red-500 mt-1">•</span>
                         <span>{exclusion}</span>
@@ -281,7 +281,7 @@ export const PackageManager: React.FC<PackageManagerProps> = ({
 
           {packages.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <PackageIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p>No packages created yet.</p>
               <p className="text-sm">Click "Add Package" to create your first travel package.</p>
             </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { ArrowLeft, Package, MapPin, Calendar, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, Utensils, User } from 'lucide-react';
+import { Package, MapPin, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, User } from 'lucide-react';
 import { shareApi } from '../services/api';
 import type { Itinerary } from '../services/api';
 import { usePDFGenerator } from './PDFGenerator';
@@ -253,6 +253,18 @@ export const ItineraryViewerIframe: React.FC = () => {
                 ₹ (INR) {currentPackage.price.toLocaleString()} /Per Person
               </p>
             )}
+          </div>
+          
+          {/* PDF Download Button */}
+          <div className="absolute bottom-4 right-4">
+            <Button 
+              onClick={handleDownloadPDF} 
+              disabled={isGeneratingPDF}
+              className="bg-white text-gray-900 hover:bg-gray-100"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
+            </Button>
           </div>
         </div>
 
