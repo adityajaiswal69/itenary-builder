@@ -42,7 +42,7 @@ class PackageController extends Controller
             'price_type' => 'required|in:per_person,total',
             'people' => 'nullable|integer|min:1',
             'locations' => 'required|array',
-            'inclusions' => 'required|array',
+            'inclusions' => 'required|array', 
             'exclusions' => 'required|array',
             'cover_image' => 'sometimes|string'
         ]);

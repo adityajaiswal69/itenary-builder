@@ -6,6 +6,7 @@ import type { Package } from '../services/api';
 import { TipTapEditor } from './TipTapEditor';
 import { ErrorBoundary } from './ErrorBoundary';
 import { packageStorage } from '../lib/packageStorage';
+import { LocationAutocomplete } from './LocationAutocomplete';
 
 interface PackageInfoModalProps {
   package?: Package | null;
@@ -207,20 +208,32 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
     // First save to localStorage to ensure data is preserved
     saveToLocalStorage(formData);
     
-    // Then trigger the save callback
-    onSave({
-      title: formData.title,
-      start_location: formData.start_location,
-      valid_till: formData.valid_till,
-      description: [{ content: formData.description }],
-      price: parseInt(formData.price),
-      price_type: formData.price_type,
+    // Ensure all arrays are properly formatted for the backend
+    // Backend requires arrays to not be empty, so provide default values
+    const packageData = {
+      title: formData.title || '',
+      start_location: formData.start_location || '',
+      valid_till: formData.valid_till || '',
+      description: formData.description ? [{ content: formData.description }] : [{ content: '' }],
+      price: parseInt(formData.price) || 0,
+      price_type: formData.price_type || 'per_person',
       people: formData.people ? parseInt(formData.people) : undefined,
-      locations: formData.locations,
-      inclusions: formData.inclusions,
-      exclusions: formData.exclusions,
-      is_published: formData.is_published,
-    });
+      locations: Array.isArray(formData.locations) && formData.locations.length > 0 
+        ? formData.locations 
+        : ['TBD'],
+      inclusions: Array.isArray(formData.inclusions) && formData.inclusions.length > 0 
+        ? formData.inclusions 
+        : ['TBD'],
+      exclusions: Array.isArray(formData.exclusions) && formData.exclusions.length > 0 
+        ? formData.exclusions 
+        : ['TBD'],
+      is_published: formData.is_published || false,
+    };
+
+    console.log('Sending package data:', packageData);
+    
+    // Then trigger the save callback
+    onSave(packageData);
     
     // Note: localStorage will only be cleared when the package is actually created in the backend
     // This happens in ItineraryBuilder after successful package creation
@@ -423,15 +436,36 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-medium mb-2">Location</label>
+            <label className="block text-sm font-medium mb-2">
+              Location
+              {formData.locations.length === 0 && (
+                <span className="text-xs text-gray-500 ml-2">(Will default to "TBD" if empty)</span>
+              )}
+            </label>
             <div className="flex gap-2 mb-2">
-              <Input
+              <LocationAutocomplete
                 value={newLocation}
-                onChange={(e) => setNewLocation(e.target.value)}
-                placeholder="Add location"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addLocation())}
+                onLocationSelect={(location) => {
+                  // Auto-add the selected location
+                  if (location.trim() && !formData.locations.includes(location.trim())) {
+                    const updatedData = {
+                      ...formData,
+                      locations: [...formData.locations, location.trim()]
+                    };
+                    setFormData(updatedData);
+                    saveToLocalStorage(updatedData);
+                  }
+                  // Input is now cleared automatically by LocationAutocomplete component
+                }}
+                placeholder="Search and select a city..."
+                className="flex-1"
               />
-              <Button type="button" onClick={addLocation} variant="outline">
+              <Button 
+                type="button" 
+                onClick={addLocation} 
+                variant="outline"
+                disabled={!newLocation.trim() || formData.locations.includes(newLocation.trim())}
+              >
                 Add
               </Button>
             </div>
@@ -456,7 +490,12 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
 
           {/* Inclusion */}
           <div>
-            <label className="block text-sm font-medium mb-2">Inclusion</label>
+            <label className="block text-sm font-medium mb-2">
+              Inclusion
+              {formData.inclusions.length === 0 && (
+                <span className="text-xs text-gray-500 ml-2">(Will default to "TBD" if empty)</span>
+              )}
+            </label>
             <div className="flex gap-2 mb-2">
               <select
                 value={selectedInclusion}
@@ -502,7 +541,12 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
 
           {/* Exclusion */}
           <div>
-            <label className="block text-sm font-medium mb-2">Exclusion</label>
+            <label className="block text-sm font-medium mb-2">
+              Exclusion
+              {formData.exclusions.length === 0 && (
+                <span className="text-xs text-gray-500 ml-2">(Will default to "TBD" if empty)</span>
+              )}
+            </label>
             <div className="flex gap-2 mb-2">
               <select
                 value={selectedExclusion}

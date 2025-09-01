@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { 
@@ -205,15 +204,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     }
   };
 
-  const _loadPackages = async () => {
-    if (!currentItinerary) return;
-    try {
-      const response = await packageApi.getAll();
-      setPackages(response.data.filter(pkg => pkg.itinerary_id === currentItinerary.id));
-    } catch (error) {
-      console.error('Failed to load packages:', error);
-    }
-  };
+
 
   const createNewItinerary = () => {
     setCurrentItinerary(null);
@@ -229,18 +220,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     setPendingPackageData(null);
   };
 
-  const _selectItinerary = (itinerary: Itinerary) => {
-    setCurrentItinerary(itinerary);
-    setTitle(itinerary.title);
-    setCoverImage(itinerary.cover_image || null);
-    setDays((itinerary.content as any)?.days || [{
-      id: '1',
-      title: 'Day 1',
-      events: []
-    }]);
-    setSelectedDayIndex(0);
-    setError(null);
-  };
+
 
   const addDay = () => {
     const newDay: Day = {
@@ -533,24 +513,9 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     }
   };
 
-  const _deleteItinerary = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this itinerary?')) return;
 
-    try {
-      await itineraryApi.delete(id);
-      await loadItineraries();
-      if (currentItinerary?.id === id) {
-        createNewItinerary();
-      }
-    } catch (error) {
-      console.error('Failed to delete itinerary:', error);
-      setError('Failed to delete itinerary');
-    }
-  };
 
-  const _getShareUrl = (shareUuid: string) => {
-    return `${window.location.origin}/share/${shareUuid}`;
-  };
+
 
   const handleCoverImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log('Cover image change event:', event.target.files);
