@@ -371,17 +371,17 @@ export const ItineraryViewer: React.FC = () => {
 
       <div className="max-w-4xl mx-auto">
         {/* Banner Section */}
-        <div className="relative h-64  rounded-lg mb-8 overflow-hidden">
+        <div className="relative h-80 md:h-96 rounded-xl mb-8 overflow-hidden shadow-xl">
           {/* Cover Image Background */}
           {itinerary.cover_image && (
             <div 
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${itinerary.cover_image})` }}
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: `url(${itinerary.cover_image.startsWith('http') ? itinerary.cover_image : `http://localhost:8000${itinerary.cover_image}`})` }}
             />
           )}
           
           {/* Gradient Overlay for Text Readability */}
-          <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/30 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-black/20"></div>
           
           {/* Contact Details Overlay */}
           <div className="absolute top-4 left-4 right-4 flex justify-between text-white text-sm">
@@ -414,15 +414,24 @@ export const ItineraryViewer: React.FC = () => {
         {/* Package Summary */}
         <div className="mb-8">
           {currentPackage && currentPackage.locations && (
-            <p className="text-gray-700 mb-4">
-              Destination Covered : {currentPackage.locations.join(', ')}
-            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin className="h-5 w-5 text-blue-600" />
+                <span className="font-semibold text-blue-800">Destinations Covered</span>
+              </div>
+              <p className="text-blue-700">
+                {currentPackage.locations.join(' → ')}
+              </p>
+            </div>
           )}
           
-          <h2 className="text-2xl font-bold mb-4">Package Summary</h2>
-          <div className="bg-gray-50 p-4 rounded-lg">
+          <h2 className="text-3xl font-bold mb-6 text-gray-800">Package Summary</h2>
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200 shadow-sm">
             {currentPackage && Array.isArray(currentPackage.description) ? (
-              <div dangerouslySetInnerHTML={{ __html: currentPackage.description[0]?.content || '' }} />
+              <div 
+                className="prose max-w-none text-gray-700 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: currentPackage.description[0]?.content || '' }} 
+              />
             ) : (
               <p className="text-gray-600">Package description not available.</p>
             )}
@@ -430,39 +439,42 @@ export const ItineraryViewer: React.FC = () => {
         </div>
 
         {/* Days Content */}
-        <div className="space-y-8">
+        <div className="space-y-12">
           {days.map((day: Day) => (
-            <div key={day.id}>
-              <h3 className="text-2xl font-bold mb-4">{day.title}</h3>
+            <div key={day.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+              {/* Day Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                <h3 className="text-2xl font-bold text-white">{day.title}</h3>
+              </div>
               
               {/* Day Details Section */}
-              <div className="border-t pt-4">
-                <div className="flex items-center gap-2 mb-4">
+              <div className="p-6">
+                <div className="flex items-center gap-2 mb-6">
                   <Info className="h-5 w-5 text-blue-500" />
-                  <span className="font-medium">{day.title} Details</span>
+                  <span className="font-semibold text-gray-700">{day.title} Details</span>
                 </div>
                 
                 {/* Events */}
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {day.events.map((event: Event) => (
-                    <div key={event.id} className="bg-white border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    <div key={event.id} className="bg-gray-50 border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow duration-300">
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                           {event.category}
                         </span>
-                        {event.subCategory && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+                        {event.subCategory && event.subCategory !== event.category && (
+                          <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
                             {event.subCategory}
                           </span>
                         )}
                         {event.type && (
-                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                          <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
                             {event.type}
                           </span>
                         )}
                       </div>
                       
-                      <h4 className="font-semibold mb-3">{event.title}</h4>
+                      <h4 className="text-lg font-semibold mb-4 text-gray-800">{event.title}</h4>
                       
                       {/* Category-specific details */}
                       <div className="mb-3">
@@ -477,16 +489,60 @@ export const ItineraryViewer: React.FC = () => {
                       )}
                       
                       {event.images && event.images.length > 0 && (
-                        <div className="grid grid-cols-2 gap-2">
-                          {event.images.map((image: string, index: number) => (
-                            <img
-                              key={index}
-                              src={image}
-                              alt={`Event ${index + 1}`}
-                              className="w-full h-32 object-contain rounded cursor-pointer hover:opacity-80 transition-opacity bg-gray-50"
-                              onClick={() => openImageSlider(event.images, index, `${event.title} - ${day.title}`)}
-                            />
-                          ))}
+                        <div className="mt-4">
+                          {/* Smart Grid Layout based on number of images */}
+                          <div className={`grid gap-3 ${
+                            event.images.length === 1 ? 'grid-cols-1' :
+                            event.images.length === 2 ? 'grid-cols-2' :
+                            event.images.length === 3 ? 'grid-cols-3' :
+                            event.images.length === 4 ? 'grid-cols-2' :
+                            event.images.length === 5 ? 'grid-cols-3' :
+                            'grid-cols-3'
+                          }`}>
+                            {event.images.map((image: string, index: number) => (
+                              <div
+                                key={index}
+                                className={`relative group cursor-pointer overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ${
+                                  event.images.length === 1 ? 'aspect-video' :
+                                  event.images.length === 2 ? 'aspect-square' :
+                                  event.images.length === 3 ? 'aspect-square' :
+                                  event.images.length === 4 ? 'aspect-square' :
+                                  event.images.length === 5 ? 'aspect-square' :
+                                  'aspect-square'
+                                }`}
+                                onClick={() => openImageSlider(event.images, index, `${event.title} - ${day.title}`)}
+                              >
+                                <img
+                                  src={image.startsWith('http') ? image : `http://localhost:8000${image}`}
+                                  alt={`Event ${index + 1}`}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                                {/* Overlay for better visibility */}
+                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300"></div>
+                                
+                                {/* Image counter for multiple images */}
+                                {event.images.length > 1 && (
+                                  <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-full">
+                                    {index + 1}/{event.images.length}
+                                  </div>
+                                )}
+                                
+                                {/* Hover effect indicator */}
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                  <div className="bg-white bg-opacity-90 rounded-full p-2">
+                                    <ChevronRight className="h-6 w-6 text-gray-700" />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {/* Image count indicator */}
+                          {event.images.length > 6 && (
+                            <p className="text-xs text-gray-500 mt-2 text-center">
+                              Showing first 6 of {event.images.length} images. Click any image to view all.
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -494,9 +550,9 @@ export const ItineraryViewer: React.FC = () => {
                 </div>
 
                 {day.events.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <Info className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>No events added for this day.</p>
+                  <div className="text-center py-12 text-gray-500">
+                    <Info className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                    <p className="text-lg">No events added for this day.</p>
                   </div>
                 )}
               </div>
@@ -607,7 +663,7 @@ export const ItineraryViewer: React.FC = () => {
             {/* Image */}
             <div className="max-w-4xl max-h-full p-4">
               <img
-                src={imageSlider.images[imageSlider.currentIndex]}
+                src={imageSlider.images[imageSlider.currentIndex].startsWith('http') ? imageSlider.images[imageSlider.currentIndex] : `http://localhost:8000${imageSlider.images[imageSlider.currentIndex]}`}
                 alt={`Image ${imageSlider.currentIndex + 1}`}
                 className="max-w-full max-h-full object-contain"
               />

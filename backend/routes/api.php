@@ -24,6 +24,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
     Route::apiResource('itineraries', \App\Http\Controllers\Api\ItineraryController::class);
     Route::apiResource('packages', \App\Http\Controllers\Api\PackageController::class);
+    
+    // Image upload routes
+    Route::post('/images/upload', [\App\Http\Controllers\Api\ImageController::class, 'upload']);
+    Route::post('/images/upload-multiple', [\App\Http\Controllers\Api\ImageController::class, 'uploadMultiple']);
+    Route::delete('/images/delete', [\App\Http\Controllers\Api\ImageController::class, 'delete']);
 });
 
 // Public shareable routes

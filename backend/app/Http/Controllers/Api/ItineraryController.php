@@ -47,10 +47,10 @@ class ItineraryController extends Controller
                 return response()->json(['error' => 'Content contains invalid data that cannot be serialized'], 400);
             }
             
-            // Check content size
-            if (strlen($jsonContent) > 1000000) { // 1MB limit for content
-                return response()->json(['error' => 'Content data is too large'], 400);
-            }
+                // Check content size (increased limit since images are now stored as files)
+                if (strlen($jsonContent) > 10485760) { // 10MB limit for content
+                    return response()->json(['error' => 'Content data is too large'], 400);
+                }
         } catch (\Exception $e) {
             return response()->json(['error' => 'Content contains invalid data that cannot be serialized'], 400);
         }
@@ -163,8 +163,8 @@ class ItineraryController extends Controller
                     return response()->json(['error' => 'Content contains invalid data that cannot be serialized'], 400);
                 }
                 
-                // Check content size
-                if (strlen($jsonContent) > 1000000) { // 1MB limit for content
+                // Check content size (increased limit since images are now stored as files)
+                if (strlen($jsonContent) > 10485760) { // 10MB limit for content
                     return response()->json(['error' => 'Content data is too large'], 400);
                 }
             } catch (\Exception $e) {

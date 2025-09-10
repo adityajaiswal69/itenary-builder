@@ -103,4 +103,31 @@ export const shareApi = {
     publicApi.get<Itinerary>(`/share/${shareUuid}`),
 };
 
+export const imageApi = {
+  upload: (file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api.post('/images/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  
+  uploadMultiple: (files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file, index) => {
+      formData.append(`images[${index}]`, file);
+    });
+    return api.post('/images/upload-multiple', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  
+  delete: (filename: string) => 
+    api.delete('/images/delete', { data: { filename } }),
+};
+
 export default api;

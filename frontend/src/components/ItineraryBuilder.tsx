@@ -22,7 +22,7 @@ import {
   Share2
 } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { itineraryApi, packageApi } from '../services/api';
+import { itineraryApi, packageApi, imageApi } from '../services/api';
 import type { Itinerary, Package as PackageType } from '../services/api';
 
 import { PackageInfoModal } from './PackageInfoModal';
@@ -275,7 +275,36 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     setEditingEvent(null);
   };
 
-  const deleteEvent = (eventId: string) => {
+  const deleteEvent = async (eventId: string) => {
+    // Find the event to get its images
+    const eventToDelete = days.find(day => 
+      day.events.find(event => event.id === eventId)
+    )?.events.find(event => event.id === eventId);
+    
+    // Delete images from server if they exist
+    if (eventToDelete?.images) {
+      for (const imagePath of eventToDelete.images) {
+        try {
+          let filename;
+          if (imagePath.includes('/storage/images/')) {
+            filename = imagePath.split('/storage/images/').pop();
+          } else if (imagePath.includes('/images/')) {
+            filename = imagePath.split('/images/').pop();
+          } else {
+            filename = imagePath.split('/').pop();
+          }
+          
+          if (filename) {
+            await imageApi.delete(filename);
+            console.log('Deleted image:', filename);
+          }
+        } catch (error) {
+          console.error('Failed to delete image:', error);
+          // Continue with event deletion even if image deletion fails
+        }
+      }
+    }
+    
     const updatedDays = days.map(day => ({
       ...day,
       events: day.events.filter(event => event.id !== eventId)
@@ -315,11 +344,45 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     setDays(updatedDays);
   };
 
+  const checkContentSize = (content: any): { isValid: boolean; size: number; error?: string } => {
+    try {
+      const jsonContent = JSON.stringify(content);
+      const sizeInBytes = new Blob([jsonContent]).size;
+      const sizeInMB = sizeInBytes / (1024 * 1024);
+      
+      // Much higher limit since we're now using file storage instead of base64
+      if (sizeInMB > 10) { // 10MB limit for content (images are now stored as files)
+        return {
+          isValid: false,
+          size: sizeInMB,
+          error: `Content is too large (${sizeInMB.toFixed(2)}MB). Please reduce the amount of text content.`
+        };
+      }
+      
+      return { isValid: true, size: sizeInMB };
+    } catch (error) {
+      return {
+        isValid: false,
+        size: 0,
+        error: 'Content contains invalid data that cannot be serialized'
+      };
+    }
+  };
+
   const publishItinerary = async () => {
     if (!title.trim()) {
       setError('Please enter a title');
       return;
     }
+
+    // Check content size before saving
+    const contentCheck = checkContentSize({ days });
+    if (!contentCheck.isValid) {
+      setError(contentCheck.error || 'Content is too large');
+      return;
+    }
+
+    console.log(`Content size: ${contentCheck.size.toFixed(2)}MB`);
 
     setLoading(true);
     setError(null);
@@ -409,9 +472,13 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
         // Navigate back to packages list
         navigate('/');
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to publish itinerary:', error);
-      setError('Failed to publish itinerary');
+      if (error.response?.status === 400) {
+        setError('Content is too large. Please reduce the number of images or use smaller images.');
+      } else {
+        setError('Failed to publish itinerary. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -422,6 +489,15 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
       setError('Please enter a title');
       return;
     }
+
+    // Check content size before saving
+    const contentCheck = checkContentSize({ days });
+    if (!contentCheck.isValid) {
+      setError(contentCheck.error || 'Content is too large');
+      return;
+    }
+
+    console.log(`Content size: ${contentCheck.size.toFixed(2)}MB`);
 
     setLoading(true);
     setError(null);
@@ -568,7 +644,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
       if (error.response?.data?.error) {
         setError(error.response.data.error);
       } else if (error.response?.status === 400) {
-        setError('Invalid data provided. Please check your input and try again.');
+        setError('Content is too large. Please reduce the number of images or use smaller images.');
       } else if (error.response?.status === 500) {
         setError('Server error occurred. Please try again or contact support.');
       } else {
@@ -583,33 +659,6 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
 
 
 
-  const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.6): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = () => {
-        // Calculate new dimensions
-        let { width, height } = img;
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width;
-          width = maxWidth;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw and compress
-        ctx?.drawImage(img, 0, 0, width, height);
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-        resolve(compressedDataUrl);
-      };
-      
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
-    });
-  };
 
   const handleCoverImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log('Cover image change event:', event.target.files);
@@ -617,47 +666,36 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     if (file) {
       console.log('Selected file:', file.name, file.type, file.size);
       // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setError('Please select a valid image file');
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/svg+xml'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Please select a valid image file (JPEG, PNG, GIF, WebP, BMP, SVG)');
         return;
       }
       
-      // Validate file size (5MB limit)
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      // Validate file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
-        setError('Image file size must be less than 5MB');
+        setError('Image file size must be less than 10MB');
         return;
       }
       
       try {
-        // Try different compression settings to fit within database limits
-        let compressedDataUrl = await compressImage(file, 800, 0.6);
+        // Upload image to server
+        const response = await imageApi.upload(file);
         
-        // If still too large, try more aggressive compression
-        if (compressedDataUrl.length > 60000) {
-          compressedDataUrl = await compressImage(file, 600, 0.5);
+        if (response.data.success) {
+          setCoverImage(response.data.path);
+          setError(null); // Clear any previous errors
+          setSuccessMessage('Cover image uploaded successfully!');
+          setTimeout(() => {
+            setSuccessMessage(null);
+          }, 3000);
+        } else {
+          setError('Failed to upload image: ' + response.data.error);
         }
-        
-        // If still too large, try even more aggressive compression
-        if (compressedDataUrl.length > 60000) {
-          compressedDataUrl = await compressImage(file, 400, 0.4);
-        }
-        
-        // Final check
-        if (compressedDataUrl.length > 60000) {
-          setError('Image is still too large even after maximum compression. Please select a much smaller image.');
-          return;
-        }
-        
-        setCoverImage(compressedDataUrl);
-        setError(null); // Clear any previous errors
-        setSuccessMessage('Cover image uploaded and compressed successfully!');
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
-      } catch (error) {
-        console.error('Image compression failed:', error);
-        setError('Failed to process image. Please try again.');
+      } catch (error: any) {
+        console.error('Image upload failed:', error);
+        setError('Failed to upload image. Please try again.');
       }
     } else {
       console.log('No file selected');
@@ -667,7 +705,29 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
     event.target.value = '';
   };
 
-  const removeCoverImage = () => {
+  const removeCoverImage = async () => {
+    // Delete cover image from server if it exists
+    if (coverImage) {
+      try {
+        let filename;
+        if (coverImage.includes('/storage/images/')) {
+          filename = coverImage.split('/storage/images/').pop();
+        } else if (coverImage.includes('/images/')) {
+          filename = coverImage.split('/images/').pop();
+        } else {
+          filename = coverImage.split('/').pop();
+        }
+        
+        if (filename) {
+          await imageApi.delete(filename);
+          console.log('Deleted cover image:', filename);
+        }
+      } catch (error) {
+        console.error('Failed to delete cover image:', error);
+        // Continue with removal even if server deletion fails
+      }
+    }
+    
     setCoverImage(null);
     setError(null);
   };
@@ -851,12 +911,13 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                   <Camera className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                   <span className="text-gray-500 text-sm">No Cover Image</span>
                   <p className="text-xs text-gray-400 mt-1">Drag & drop an image here</p>
+                  <p className="text-xs text-gray-400 mt-1">Supports JPEG, PNG, GIF, WebP, BMP, SVG (max 10MB)</p>
                 </div>
               )}
             </div>
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/svg+xml"
               onChange={handleCoverImageChange}
               className="hidden"
               id="cover-image"
@@ -1089,7 +1150,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                           {event.images.map((image, index) => (
                             <img
                               key={index}
-                              src={image}
+                              src={image.startsWith('http') ? image : `http://localhost:8000${image}`}
                               alt={`Event ${index + 1}`}
                               className="w-full h-24 object-cover rounded"
                             />
@@ -1366,7 +1427,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                                    {event.images.map((image: string, index: number) => (
                                      <img
                                        key={index}
-                                       src={image}
+                                       src={image.startsWith('http') ? image : `http://localhost:8000${image}`}
                                        alt={`Event ${index + 1}`}
                                        className="w-full h-24 object-cover rounded"
                                      />

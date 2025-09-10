@@ -4,6 +4,7 @@ import { Input } from './ui/input';
 import { X, Plus, Camera, Calendar, Utensils, Car } from 'lucide-react';
 import { TipTapEditor } from './TipTapEditor';
 import { ErrorBoundary } from './ErrorBoundary';
+import { imageApi } from '../services/api';
 
 interface Event {
   id: string;
@@ -12,7 +13,7 @@ interface Event {
   type?: 'Check In' | 'Check Out' | 'Departure' | 'Arrival';
   title: string;
   notes: string;
-  images: string[];
+  images: string[]; // Now stores file paths instead of base64
   isInLibrary: boolean;
   
   // Time fields
@@ -398,7 +399,7 @@ export const EventModal: React.FC<EventModalProps> = ({
     isInLibrary: false,
     time: '',
     duration: '',
-    timezone: 'IST (Kolkata, Calcutta)',
+    timezone: '',
     bookedThrough: '',
     confirmationNumber: '',
     amount: 0,
@@ -419,7 +420,7 @@ export const EventModal: React.FC<EventModalProps> = ({
         isInLibrary: event.isInLibrary,
         time: event.time || '',
         duration: event.duration || '',
-        timezone: event.timezone || 'IST (Kolkata, Calcutta)',
+        timezone: event.timezone || '',
         bookedThrough: event.bookedThrough || '',
         confirmationNumber: event.confirmationNumber || '',
         roomBedType: event.roomBedType || '',
@@ -441,21 +442,74 @@ export const EventModal: React.FC<EventModalProps> = ({
     }
   }, [event]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && formData.images.length < 5) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setFormData({
-          ...formData,
-          images: [...formData.images, e.target?.result as string]
-        });
-      };
-      reader.readAsDataURL(file);
+    if (file && formData.images.length < 6) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/svg+xml'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Please select a valid image file (JPEG, PNG, GIF, WebP, BMP, SVG)');
+        return;
+      }
+      
+      // Validate file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        alert('Image file size must be less than 10MB');
+        return;
+      }
+      
+      try {
+        // Upload image to server
+        const response = await imageApi.upload(file);
+        
+        if (response.data.success) {
+          console.log('Image uploaded successfully:', response.data);
+          setFormData({
+            ...formData,
+            images: [...formData.images, response.data.path]
+          });
+        } else {
+          alert('Failed to upload image: ' + response.data.error);
+        }
+      } catch (error: any) {
+        console.error('Image upload failed:', error);
+        alert('Failed to upload image. Please try again.');
+      }
+    } else if (formData.images.length >= 6) {
+      alert('Maximum 6 images allowed per event');
     }
+    
+    // Reset the input value
+    e.target.value = '';
   };
 
-  const removeImage = (index: number) => {
+  const removeImage = async (index: number) => {
+    const imagePath = formData.images[index];
+    console.log('Removing image at index:', index, 'Path:', imagePath);
+    
+    try {
+      // Extract filename from the path (handle both relative and absolute URLs)
+      let filename;
+      if (imagePath.includes('/storage/images/')) {
+        filename = imagePath.split('/storage/images/').pop();
+      } else if (imagePath.includes('/images/')) {
+        filename = imagePath.split('/images/').pop();
+      } else {
+        filename = imagePath.split('/').pop();
+      }
+      
+      console.log('Extracted filename:', filename);
+      
+      if (filename) {
+        const response = await imageApi.delete(filename);
+        console.log('Delete response:', response.data);
+      }
+    } catch (error) {
+      console.error('Failed to delete image from server:', error);
+      // Continue with local removal even if server deletion fails
+    }
+    
     setFormData({
       ...formData,
       images: formData.images.filter((_, i) => i !== index)
@@ -553,42 +607,60 @@ export const EventModal: React.FC<EventModalProps> = ({
             </ErrorBoundary>
           </div>
 
-          {/* Check-in Time */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Check-in Time</label>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Time</label>
-                <Input
-                  value={formData.time || ''}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                  placeholder="add a time"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Duration</label>
-                <Input
-                  value={formData.duration || ''}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                  placeholder="e.g. 2 hrs"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Timezone</label>
-                <select
-                  value={formData.timezone || 'IST (Kolkata, Calcutta)'}
-                  onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="IST (Kolkata, Calcutta)">IST (Kolkata, Calcutta)</option>
-                  <option value="UTC">UTC</option>
-                  <option value="EST (New York)">EST (New York)</option>
-                  <option value="PST (Los Angeles)">PST (Los Angeles)</option>
-                  <option value="GMT (London)">GMT (London)</option>
-                </select>
-              </div>
-            </div>
-          </div>
+           {/* Check-in Time */}
+           <div>
+             <label className="block text-sm font-medium mb-2">Check-in Time</label>
+             <div className={`grid gap-4 ${(formData.time || formData.duration) ? 'grid-cols-3' : 'grid-cols-2'}`}>
+               <div>
+                 <label className="block text-xs text-gray-600 mb-1">Time</label>
+                 <Input
+                   value={formData.time || ''}
+                   onChange={(e) => {
+                     const newTime = e.target.value;
+                     setFormData({ 
+                       ...formData, 
+                       time: newTime,
+                       // Set default timezone to IST when user enters time or duration
+                       timezone: (newTime || formData.duration) ? (formData.timezone || 'IST (Kolkata, Calcutta)') : ''
+                     });
+                   }}
+                   placeholder="add a time"
+                 />
+               </div>
+               <div>
+                 <label className="block text-xs text-gray-600 mb-1">Duration</label>
+                 <Input
+                   value={formData.duration || ''}
+                   onChange={(e) => {
+                     const newDuration = e.target.value;
+                     setFormData({ 
+                       ...formData, 
+                       duration: newDuration,
+                       // Set default timezone to IST when user enters time or duration
+                       timezone: (formData.time || newDuration) ? (formData.timezone || 'IST (Kolkata, Calcutta)') : ''
+                     });
+                   }}
+                   placeholder="e.g. 2 hrs"
+                 />
+               </div>
+               {(formData.time || formData.duration) && (
+                 <div>
+                   <label className="block text-xs text-gray-600 mb-1">Timezone</label>
+                   <select
+                     value={formData.timezone || 'IST (Kolkata, Calcutta)'}
+                     onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                   >
+                     <option value="IST (Kolkata, Calcutta)">IST (Kolkata, Calcutta)</option>
+                     <option value="UTC">UTC</option>
+                     <option value="EST (New York)">EST (New York)</option>
+                     <option value="PST (Los Angeles)">PST (Los Angeles)</option>
+                     <option value="GMT (London)">GMT (London)</option>
+                   </select>
+                 </div>
+               )}
+             </div>
+           </div>
 
           {/* Details */}
           <div>
@@ -654,19 +726,20 @@ export const EventModal: React.FC<EventModalProps> = ({
             <label className="block text-sm font-medium mb-2">Images</label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               <Camera className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-600 mb-2">Click to Add up to 5 Photos</p>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-                id="image-upload"
-                disabled={formData.images.length >= 5}
-              />
+              <p className="text-gray-600 mb-2">Click to Add up to 6 Photos</p>
+              <p className="text-xs text-gray-500 mb-2">Supports JPEG, PNG, GIF, WebP, BMP, SVG (max 10MB each)</p>
+               <input
+                 type="file"
+                 accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/svg+xml"
+                 onChange={handleImageUpload}
+                 className="hidden"
+                 id="image-upload"
+                 disabled={formData.images.length >= 6}
+               />
               <label
                 htmlFor="image-upload"
                 className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md cursor-pointer ${
-                  formData.images.length >= 5
+                  formData.images.length >= 6
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
@@ -676,16 +749,38 @@ export const EventModal: React.FC<EventModalProps> = ({
               </label>
             </div>
 
+            {/* Image Count and Warning */}
+            <div className="mt-2 text-sm text-gray-600">
+              {formData.images.length > 0 && (
+                <span className="text-blue-600">
+                  {formData.images.length}/6 images added
+                  {formData.images.length >= 4 && (
+                    <span className="text-orange-600 ml-2">⚠️ Consider reducing image size</span>
+                  )}
+                </span>
+              )}
+            </div>
+
             {/* Image Preview */}
             {formData.images.length > 0 && (
               <div className="grid grid-cols-2 gap-4 mt-4">
-                {formData.images.map((image, index) => (
-                  <div key={index} className="relative">
-                    <img
-                      src={image}
-                      alt={`Image ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
+                {formData.images.map((image, index) => {
+                  console.log('Displaying image:', image, 'at index:', index);
+                  // Ensure we have the correct base URL for images
+                  const imageUrl = image.startsWith('http') ? image : `http://localhost:8000${image}`;
+                  return (
+                    <div key={index} className="relative">
+                      <img
+                        src={imageUrl}
+                        alt={`Image ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg"
+                        onError={(e) => {
+                          console.error('Image failed to load:', imageUrl, e);
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully:', imageUrl);
+                        }}
+                      />
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
@@ -694,7 +789,8 @@ export const EventModal: React.FC<EventModalProps> = ({
                       <X className="h-3 w-3" />
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
