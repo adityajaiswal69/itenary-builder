@@ -82,7 +82,7 @@ class PackageController extends Controller
         $request->validate([
             'title' => 'sometimes|string|max:255',
             'start_location' => 'sometimes|string|max:255',
-            'valid_till' => 'sometimes|date|after_or_equal:today',
+            'valid_till' => 'sometimes|date',
             'description' => 'sometimes|array',
             'price' => 'sometimes|integer|min:0',
             'price_type' => 'sometimes|in:per_person,total',

@@ -37,11 +37,9 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
   });
 
   const [newLocation, setNewLocation] = useState('');
-  const [selectedInclusion, setSelectedInclusion] = useState('');
-  const [selectedExclusion, setSelectedExclusion] = useState('');
 
-  // Predefined inclusion options
-  const inclusionOptions = [
+  // Unified options for both inclusion and exclusion
+  const allOptions = [
     'Breakfast',
     'Lunch', 
     'Dinner',
@@ -59,11 +57,7 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
     'Entry tickets',
     'Travel insurance',
     'Wi-Fi access',
-    'Photography services'
-  ];
-
-  // Predefined exclusion options  
-  const exclusionOptions = [
+    'Photography services',
     'Taxes',
     'TOLLS',
     'Personal expenses',
@@ -160,43 +154,49 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
     saveToLocalStorage(updatedData);
   };
 
-  const addInclusion = () => {
-    if (selectedInclusion && !formData.inclusions.includes(selectedInclusion)) {
-      const updatedData = {
-        ...formData,
-        inclusions: [...formData.inclusions, selectedInclusion]
-      };
-      setFormData(updatedData);
-      saveToLocalStorage(updatedData);
-      setSelectedInclusion('');
+  const toggleInclusion = (option: string) => {
+    const isCurrentlyIncluded = formData.inclusions.includes(option);
+    
+    let updatedInclusions = [...formData.inclusions];
+    let updatedExclusions = [...formData.exclusions];
+    
+    if (isCurrentlyIncluded) {
+      // Remove from inclusions
+      updatedInclusions = updatedInclusions.filter(i => i !== option);
+    } else {
+      // Add to inclusions and remove from exclusions if present
+      updatedInclusions = [...updatedInclusions, option];
+      updatedExclusions = updatedExclusions.filter(e => e !== option);
     }
-  };
-
-  const removeInclusion = (inclusion: string) => {
+    
     const updatedData = {
       ...formData,
-      inclusions: formData.inclusions.filter(i => i !== inclusion)
+      inclusions: updatedInclusions,
+      exclusions: updatedExclusions
     };
     setFormData(updatedData);
     saveToLocalStorage(updatedData);
   };
 
-  const addExclusion = () => {
-    if (selectedExclusion && !formData.exclusions.includes(selectedExclusion)) {
-      const updatedData = {
-        ...formData,
-        exclusions: [...formData.exclusions, selectedExclusion]
-      };
-      setFormData(updatedData);
-      saveToLocalStorage(updatedData);
-      setSelectedExclusion('');
+  const toggleExclusion = (option: string) => {
+    const isCurrentlyExcluded = formData.exclusions.includes(option);
+    
+    let updatedInclusions = [...formData.inclusions];
+    let updatedExclusions = [...formData.exclusions];
+    
+    if (isCurrentlyExcluded) {
+      // Remove from exclusions
+      updatedExclusions = updatedExclusions.filter(e => e !== option);
+    } else {
+      // Add to exclusions and remove from inclusions if present
+      updatedExclusions = [...updatedExclusions, option];
+      updatedInclusions = updatedInclusions.filter(i => i !== option);
     }
-  };
-
-  const removeExclusion = (exclusion: string) => {
+    
     const updatedData = {
       ...formData,
-      exclusions: formData.exclusions.filter(e => e !== exclusion)
+      inclusions: updatedInclusions,
+      exclusions: updatedExclusions
     };
     setFormData(updatedData);
     saveToLocalStorage(updatedData);
@@ -208,14 +208,32 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
     // First save to localStorage to ensure data is preserved
     saveToLocalStorage(formData);
     
+    // Validate required fields
+    if (!formData.title.trim()) {
+      alert('Package title is required');
+      return;
+    }
+    if (!formData.start_location.trim()) {
+      alert('Start location is required');
+      return;
+    }
+    if (!formData.valid_till) {
+      alert('Valid till date is required');
+      return;
+    }
+    if (!formData.price || parseInt(formData.price) <= 0) {
+      alert('Price must be greater than 0');
+      return;
+    }
+    
     // Ensure all arrays are properly formatted for the backend
     // Backend requires arrays to not be empty, so provide default values
     const packageData = {
-      title: formData.title || '',
-      start_location: formData.start_location || '',
-      valid_till: formData.valid_till || '',
+      title: formData.title.trim(),
+      start_location: formData.start_location.trim(),
+      valid_till: formData.valid_till,
       description: formData.description ? [{ content: formData.description }] : [{ content: '' }],
-      price: parseInt(formData.price) || 0,
+      price: parseInt(formData.price),
       price_type: formData.price_type || 'per_person',
       people: formData.people ? parseInt(formData.people) : undefined,
       locations: Array.isArray(formData.locations) && formData.locations.length > 0 
@@ -490,104 +508,134 @@ export const PackageInfoModal: React.FC<PackageInfoModalProps> = ({
 
           {/* Inclusion */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium mb-3">
               Inclusion
               {formData.inclusions.length === 0 && (
                 <span className="text-xs text-gray-500 ml-2">(Will default to "TBD" if empty)</span>
               )}
             </label>
-            <div className="flex gap-2 mb-2">
-              <select
-                value={selectedInclusion}
-                onChange={(e) => setSelectedInclusion(e.target.value)}
-                className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">Select an inclusion...</option>
-                {inclusionOptions
-                  .filter(option => !formData.inclusions.includes(option))
-                  .map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
+            <div className="border rounded-lg p-4 bg-white">
+              <div className="grid grid-cols-2 gap-3">
+                {allOptions.map((option) => {
+                  const isIncluded = formData.inclusions.includes(option);
+                  const isExcluded = formData.exclusions.includes(option);
+                  const isDisabled = isExcluded;
+                  
+                  return (
+                    <label
+                      key={option}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        isDisabled 
+                          ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-200' 
+                          : 'hover:bg-green-50 border-gray-200 hover:border-green-300'
+                      } ${isIncluded ? 'bg-green-50 border-green-300' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isIncluded}
+                        onChange={() => toggleInclusion(option)}
+                        disabled={isDisabled}
+                        className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500 focus:ring-2"
+                      />
+                      <span className={`text-sm font-medium ${isDisabled ? 'text-gray-400' : 'text-gray-700'}`}>
+                        {option}
+                      </span>
+                      {isDisabled && (
+                        <span className="text-xs text-gray-400 ml-auto">(in exclusions)</span>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            {formData.inclusions.length > 0 && (
+              <div className="mt-3">
+                <div className="text-xs text-gray-500 mb-2 font-medium">Selected inclusions:</div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.inclusions.map((inclusion, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm flex items-center gap-1"
+                    >
+                      {inclusion}
+                      <button
+                        type="button"
+                        onClick={() => toggleInclusion(inclusion)}
+                        className="text-green-600 hover:text-green-800"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
                   ))}
-              </select>
-              <Button 
-                type="button" 
-                onClick={addInclusion} 
-                variant="outline"
-                disabled={!selectedInclusion}
-              >
-                Add
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.inclusions.map((inclusion, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm flex items-center gap-1"
-                >
-                  {inclusion}
-                  <button
-                    type="button"
-                    onClick={() => removeInclusion(inclusion)}
-                    className="text-green-600 hover:text-green-800"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Exclusion */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium mb-3">
               Exclusion
               {formData.exclusions.length === 0 && (
                 <span className="text-xs text-gray-500 ml-2">(Will default to "TBD" if empty)</span>
               )}
             </label>
-            <div className="flex gap-2 mb-2">
-              <select
-                value={selectedExclusion}
-                onChange={(e) => setSelectedExclusion(e.target.value)}
-                className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">Select an exclusion...</option>
-                {exclusionOptions
-                  .filter(option => !formData.exclusions.includes(option))
-                  .map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
+            <div className="border rounded-lg p-4 bg-white">
+              <div className="grid grid-cols-2 gap-3">
+                {allOptions.map((option) => {
+                  const isIncluded = formData.inclusions.includes(option);
+                  const isExcluded = formData.exclusions.includes(option);
+                  const isDisabled = isIncluded;
+                  
+                  return (
+                    <label
+                      key={option}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        isDisabled 
+                          ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-200' 
+                          : 'hover:bg-red-50 border-gray-200 hover:border-red-300'
+                      } ${isExcluded ? 'bg-red-50 border-red-300' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isExcluded}
+                        onChange={() => toggleExclusion(option)}
+                        disabled={isDisabled}
+                        className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 focus:ring-2"
+                      />
+                      <span className={`text-sm font-medium ${isDisabled ? 'text-gray-400' : 'text-gray-700'}`}>
+                        {option}
+                      </span>
+                      {isDisabled && (
+                        <span className="text-xs text-gray-400 ml-auto">(in inclusions)</span>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            {formData.exclusions.length > 0 && (
+              <div className="mt-3">
+                <div className="text-xs text-gray-500 mb-2 font-medium">Selected exclusions:</div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.exclusions.map((exclusion, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm flex items-center gap-1"
+                    >
+                      {exclusion}
+                      <button
+                        type="button"
+                        onClick={() => toggleExclusion(exclusion)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
                   ))}
-              </select>
-              <Button 
-                type="button" 
-                onClick={addExclusion} 
-                variant="outline"
-                disabled={!selectedExclusion}
-              >
-                Add
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.exclusions.map((exclusion, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm flex items-center gap-1"
-                >
-                  {exclusion}
-                  <button
-                    type="button"
-                    onClick={() => removeExclusion(exclusion)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
