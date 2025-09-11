@@ -15,7 +15,7 @@ class ShareController extends Controller
         try {
             $itinerary = Itinerary::where('share_uuid', $shareUuid)
                 ->where('is_published', true)
-                ->with(['packages', 'user:id,name,email,phone'])
+                ->with(['packages', 'user:id,name,email,phone', 'user.companyDetails'])
                 ->first();
             
             if (!$itinerary) {

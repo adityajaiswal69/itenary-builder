@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { ArrowLeft, Package, MapPin, Calendar, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, Utensils } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Calendar, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, Utensils, Eye, Building2, Globe } from 'lucide-react';
 import { shareApi } from '../services/api';
 import type { Itinerary } from '../services/api';
 import { usePDFGenerator } from './PDFGenerator';
@@ -357,15 +357,24 @@ export const ItineraryViewer: React.FC = () => {
             <div className="w-8 h-8 bg-gray-200 rounded"></div>
             <span className="text-lg font-semibold">aditya</span>
           </div>
-          <Button 
-            onClick={handleDownloadPDF} 
-            className="bg-green-600 hover:bg-green-700 border-green-500" 
-            disabled={isGeneratingPDF}
-            data-download-btn
-          >
-            <Download className="h-4 w-4 mr-2" />
-            {isGeneratingPDF ? 'Generating PDF...' : 'Download PDF'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => window.open(`/preview/${shareUuid}`, '_blank')}
+              className="bg-blue-600 hover:bg-blue-700 border-blue-500"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Preview PDF
+            </Button>
+            <Button 
+              onClick={handleDownloadPDF} 
+              className="bg-green-600 hover:bg-green-700 border-green-500" 
+              disabled={isGeneratingPDF}
+              data-download-btn
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {isGeneratingPDF ? 'Generating PDF...' : 'Download PDF'}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -383,23 +392,51 @@ export const ItineraryViewer: React.FC = () => {
           {/* Gradient Overlay for Text Readability */}
           <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-black/20"></div>
           
-          {/* Contact Details Overlay */}
-          <div className="absolute top-4 left-4 right-4 flex justify-between text-white text-sm">
-            {itinerary.user?.email && (
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <span>{itinerary.user.email}</span>
+          {/* Company Logo and Contact Details Overlay */}
+          <div className="absolute top-4 left-4 right-4 flex justify-between items-start text-white text-sm">
+            <div className="flex items-center gap-4">
+              {/* Company Logo */}
+              {itinerary.user?.company_details?.logo && (
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center overflow-hidden">
+                  <img 
+                    src={itinerary.user.company_details.logo} 
+                    alt="Company Logo" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+              
+              {/* Contact Details */}
+              <div className="space-y-1">
+                {itinerary.user?.company_details?.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    <span>{itinerary.user.company_details.email}</span>
+                  </div>
+                )}
+                {itinerary.user?.company_details?.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    <span>{itinerary.user.company_details.phone}</span>
+                  </div>
+                )}
+                {/* Fallback to user contact if no company details */}
+                {!itinerary.user?.company_details?.email && itinerary.user?.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    <span>{itinerary.user.email}</span>
+                  </div>
+                )}
+                {!itinerary.user?.company_details?.phone && itinerary.user?.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    <span>{itinerary.user.phone}</span>
+                  </div>
+                )}
               </div>
-            )}
-            {itinerary.user?.phone && (
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                <span>{itinerary.user.phone}</span>
-              </div>
-            )}
-
+            </div>
           </div>
-
++
           {/* Package Title and Price Overlay */}
           <div className="absolute bottom-4 left-4 text-white">
             <h1 className="text-3xl font-bold mb-2">{itinerary.title}</h1>
@@ -437,6 +474,84 @@ export const ItineraryViewer: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Company More Info Card */}
+        {itinerary.user?.company_details && (
+          <div className="mb-8">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  More Information
+                </h3>
+              </div>
+              
+              <div className="p-6">
+                <div className="flex items-start gap-6">
+                  {/* Company Logo */}
+                  {itinerary.user.company_details.logo && (
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                      <img 
+                        src={itinerary.user.company_details.logo} 
+                        alt="Company Logo" 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Company Details */}
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        {itinerary.user.company_details.company_name}
+                      </h4>
+                      {itinerary.user.company_details.description && (
+                        <p className="text-gray-600 leading-relaxed">
+                          {itinerary.user.company_details.description}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Contact Information */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {itinerary.user.company_details.email && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Mail className="h-4 w-4 text-blue-500" />
+                          <span>{itinerary.user.company_details.email}</span>
+                        </div>
+                      )}
+                      {itinerary.user.company_details.phone && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Phone className="h-4 w-4 text-blue-500" />
+                          <span>{itinerary.user.company_details.phone}</span>
+                        </div>
+                      )}
+                      {itinerary.user.company_details.website && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Globe className="h-4 w-4 text-blue-500" />
+                          <a 
+                            href={itinerary.user.company_details.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            {itinerary.user.company_details.website}
+                          </a>
+                        </div>
+                      )}
+                      {itinerary.user.company_details.address && (
+                        <div className="flex items-start gap-2 text-gray-600">
+                          <MapPin className="h-4 w-4 text-blue-500 mt-0.5" />
+                          <span className="text-sm">{itinerary.user.company_details.address}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Days Content */}
         <div className="space-y-12">

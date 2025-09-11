@@ -181,3 +181,4 @@ If you encounter any issues with the iframe integration:
 
 **Note**: The iframe functionality requires the itinerary to be published and have a valid share UUID. Unpublished itineraries cannot be embedded.
 
+

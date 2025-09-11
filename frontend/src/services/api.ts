@@ -39,6 +39,20 @@ api.interceptors.response.use(
   }
 );
 
+export interface CompanyDetails {
+  id: string;
+  user_id: string;
+  company_name: string;
+  logo?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Itinerary {
   id: string;
   user_id: string;
@@ -55,6 +69,7 @@ export interface Itinerary {
     name: string;
     email: string;
     phone?: string;
+    company_details?: CompanyDetails;
   };
 }
 
@@ -101,6 +116,16 @@ export const packageApi = {
 export const shareApi = {
   getByShareUuid: (shareUuid: string) => 
     publicApi.get<Itinerary>(`/share/${shareUuid}`),
+};
+
+export const companyDetailsApi = {
+  get: () => api.get<{ success: boolean; data: CompanyDetails | null }>('/company-details'),
+  create: (data: Omit<CompanyDetails, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => 
+    api.post<{ success: boolean; message: string; data: CompanyDetails }>('/company-details', data),
+  update: (id: string, data: Partial<Omit<CompanyDetails, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => 
+    api.put<{ success: boolean; message: string; data: CompanyDetails }>(`/company-details/${id}`, data),
+  delete: (id: string) => 
+    api.delete<{ success: boolean; message: string }>(`/company-details/${id}`),
 };
 
 export const imageApi = {

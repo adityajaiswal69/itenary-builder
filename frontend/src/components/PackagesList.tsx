@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { packageApi } from '../services/api';
 import type { Package as PackageType } from '../services/api';
+import { ProfileModal } from './ProfileModal';
 
 interface User {
   id: string;
@@ -42,6 +43,7 @@ export const PackagesList: React.FC<PackagesListProps> = ({
   const [loading, setLoading] = useState(true);
   const [searchDestination, setSearchDestination] = useState('');
   const [publishStatus, setPublishStatus] = useState('all');
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     loadPackages();
@@ -165,7 +167,13 @@ export const PackagesList: React.FC<PackagesListProps> = ({
                 <p className="text-sm font-medium">{user?.name || 'Guest'}</p>
                 
               </div>
-              <User className="h-8 w-8 text-gray-400" />
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                title="Profile Settings"
+              >
+                <User className="h-8 w-8 text-gray-400 hover:text-gray-600" />
+              </button>
             </div>
             <Button variant="ghost" onClick={onLogout}>
               <LogOut className="h-4 w-4 mr-2" />
@@ -414,6 +422,13 @@ export const PackagesList: React.FC<PackagesListProps> = ({
           )}
         </div>
       </div>
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={user}
+      />
     </div>
   );
 };

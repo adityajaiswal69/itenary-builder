@@ -25,6 +25,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('itineraries', \App\Http\Controllers\Api\ItineraryController::class);
     Route::apiResource('packages', \App\Http\Controllers\Api\PackageController::class);
     
+    // Company details routes
+    Route::get('/company-details', [\App\Http\Controllers\Api\CompanyDetailsController::class, 'show']);
+    Route::post('/company-details', [\App\Http\Controllers\Api\CompanyDetailsController::class, 'store']);
+    Route::put('/company-details/{id}', [\App\Http\Controllers\Api\CompanyDetailsController::class, 'update']);
+    Route::delete('/company-details/{id}', [\App\Http\Controllers\Api\CompanyDetailsController::class, 'destroy']);
+    
     // Image upload routes
     Route::post('/images/upload', [\App\Http\Controllers\Api\ImageController::class, 'upload']);
     Route::post('/images/upload-multiple', [\App\Http\Controllers\Api\ImageController::class, 'uploadMultiple']);
