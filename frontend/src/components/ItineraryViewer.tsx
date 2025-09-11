@@ -399,7 +399,7 @@ export const ItineraryViewer: React.FC = () => {
               {itinerary.user?.company_details?.logo && (
                 <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center overflow-hidden">
                   <img 
-                    src={itinerary.user.company_details.logo} 
+                    src={itinerary.user.company_details.logo.startsWith('http') ? itinerary.user.company_details.logo : `http://localhost:8000${itinerary.user.company_details.logo}`} 
                     alt="Company Logo" 
                     className="w-full h-full object-contain"
                   />
@@ -492,7 +492,7 @@ export const ItineraryViewer: React.FC = () => {
                   {itinerary.user.company_details.logo && (
                     <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                       <img 
-                        src={itinerary.user.company_details.logo} 
+                        src={itinerary.user.company_details.logo.startsWith('http') ? itinerary.user.company_details.logo : `http://localhost:8000${itinerary.user.company_details.logo}`} 
                         alt="Company Logo" 
                         className="w-full h-full object-contain"
                       />

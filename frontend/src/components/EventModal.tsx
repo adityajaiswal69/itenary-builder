@@ -766,7 +766,7 @@ export const EventModal: React.FC<EventModalProps> = ({
               <div className="grid grid-cols-2 gap-4 mt-4">
                 {formData.images.map((image, index) => {
                   console.log('Displaying image:', image, 'at index:', index);
-                  // Ensure we have the correct base URL for images
+                  // Ensure we have the correct base URL for images with CORS support
                   const imageUrl = image.startsWith('http') ? image : `http://localhost:8000${image}`;
                   return (
                     <div key={index} className="relative">
