@@ -11,7 +11,11 @@ import {
   Globe, 
   FileText,
   Save,
-  Loader2
+  Loader2,
+  Facebook,
+  MessageCircle,
+  Instagram,
+  Youtube
 } from 'lucide-react';
 import { companyDetailsApi, imageApi, type CompanyDetails } from '../services/api';
 
@@ -38,6 +42,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, use
     phone: '',
     address: '',
     website: '',
+    facebook_url: '',
+    whatsapp_url: '',
+    instagram_url: '',
+    youtube_url: '',
     description: '',
   });
 
@@ -61,6 +69,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, use
           phone: details.phone || '',
           address: details.address || '',
           website: details.website || '',
+          facebook_url: details.facebook_url || '',
+          whatsapp_url: details.whatsapp_url || '',
+          instagram_url: details.instagram_url || '',
+          youtube_url: details.youtube_url || '',
           description: details.description || '',
         });
       } else {
@@ -72,6 +84,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, use
           phone: user?.phone || '',
           address: '',
           website: '',
+          facebook_url: '',
+          whatsapp_url: '',
+          instagram_url: '',
+          youtube_url: '',
           description: '',
         });
       }
@@ -128,6 +144,22 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, use
       return;
     }
 
+    // Validate social media URLs if provided
+    const socialUrls = [
+      { field: 'facebook_url', name: 'Facebook' },
+      { field: 'whatsapp_url', name: 'WhatsApp' },
+      { field: 'instagram_url', name: 'Instagram' },
+      { field: 'youtube_url', name: 'YouTube' }
+    ];
+
+    for (const { field, name } of socialUrls) {
+      const url = formData[field as keyof typeof formData];
+      if (url && url.trim() && !/^https?:\/\/.+/.test(url)) {
+        alert(`Please enter a valid ${name} URL (starting with http:// or https://)`);
+        return;
+      }
+    }
+
     try {
       setSaving(true);
       
@@ -139,13 +171,26 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, use
         phone: formData.phone.trim() || undefined,
         address: formData.address.trim() || undefined,
         website: formData.website.trim() || undefined,
+        facebook_url: formData.facebook_url.trim() || undefined,
+        whatsapp_url: formData.whatsapp_url.trim() || undefined,
+        instagram_url: formData.instagram_url.trim() || undefined,
+        youtube_url: formData.youtube_url.trim() || undefined,
         description: formData.description.trim() || undefined,
       };
 
-      const response = await companyDetailsApi.create(cleanedData);
+      let response;
+      if (companyDetails) {
+        // Update existing company details
+        response = await companyDetailsApi.update(companyDetails.id, cleanedData);
+      } else {
+        // Create new company details
+        response = await companyDetailsApi.create(cleanedData);
+      }
+      
       if (response.data.success) {
         setCompanyDetails(response.data.data);
         alert('Company details saved successfully!');
+        onClose(); // Close the modal after successful save
       }
     } catch (error: any) {
       console.error('Failed to save company details:', error);
@@ -304,6 +349,81 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, use
                 {formData.website && formData.website.trim() && !/^https?:\/\/.+/.test(formData.website) && (
                   <p className="text-red-500 text-xs">Please enter a valid URL (starting with http:// or https://)</p>
                 )}
+              </div>
+
+              {/* Social Media Links */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900">Social Media Links</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      <Facebook className="h-4 w-4 inline mr-1 text-blue-600" />
+                      Facebook
+                    </label>
+                    <Input
+                      type="url"
+                      value={formData.facebook_url}
+                      onChange={(e) => handleInputChange('facebook_url', e.target.value)}
+                      placeholder="https://facebook.com/yourpage"
+                      className={formData.facebook_url && formData.facebook_url.trim() && !/^https?:\/\/.+/.test(formData.facebook_url) ? 'border-red-500 focus:border-red-500' : ''}
+                    />
+                    {formData.facebook_url && formData.facebook_url.trim() && !/^https?:\/\/.+/.test(formData.facebook_url) && (
+                      <p className="text-red-500 text-xs">Please enter a valid URL</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      <MessageCircle className="h-4 w-4 inline mr-1 text-green-600" />
+                      WhatsApp
+                    </label>
+                    <Input
+                      type="url"
+                      value={formData.whatsapp_url}
+                      onChange={(e) => handleInputChange('whatsapp_url', e.target.value)}
+                      placeholder="https://wa.me/1234567890"
+                      className={formData.whatsapp_url && formData.whatsapp_url.trim() && !/^https?:\/\/.+/.test(formData.whatsapp_url) ? 'border-red-500 focus:border-red-500' : ''}
+                    />
+                    {formData.whatsapp_url && formData.whatsapp_url.trim() && !/^https?:\/\/.+/.test(formData.whatsapp_url) && (
+                      <p className="text-red-500 text-xs">Please enter a valid URL</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      <Instagram className="h-4 w-4 inline mr-1 text-pink-600" />
+                      Instagram
+                    </label>
+                    <Input
+                      type="url"
+                      value={formData.instagram_url}
+                      onChange={(e) => handleInputChange('instagram_url', e.target.value)}
+                      placeholder="https://instagram.com/yourpage"
+                      className={formData.instagram_url && formData.instagram_url.trim() && !/^https?:\/\/.+/.test(formData.instagram_url) ? 'border-red-500 focus:border-red-500' : ''}
+                    />
+                    {formData.instagram_url && formData.instagram_url.trim() && !/^https?:\/\/.+/.test(formData.instagram_url) && (
+                      <p className="text-red-500 text-xs">Please enter a valid URL</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      <Youtube className="h-4 w-4 inline mr-1 text-red-600" />
+                      YouTube
+                    </label>
+                    <Input
+                      type="url"
+                      value={formData.youtube_url}
+                      onChange={(e) => handleInputChange('youtube_url', e.target.value)}
+                      placeholder="https://youtube.com/yourchannel"
+                      className={formData.youtube_url && formData.youtube_url.trim() && !/^https?:\/\/.+/.test(formData.youtube_url) ? 'border-red-500 focus:border-red-500' : ''}
+                    />
+                    {formData.youtube_url && formData.youtube_url.trim() && !/^https?:\/\/.+/.test(formData.youtube_url) && (
+                      <p className="text-red-500 text-xs">Please enter a valid URL</p>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Description */}

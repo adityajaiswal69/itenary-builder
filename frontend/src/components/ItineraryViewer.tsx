@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { ArrowLeft, Package, MapPin, Calendar, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, Utensils, Eye, Building2, Globe } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Calendar, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, Utensils, Eye, Building2, Globe, Facebook, MessageCircle, Instagram, Youtube } from 'lucide-react';
 import { shareApi } from '../services/api';
 import type { Itinerary } from '../services/api';
 import { usePDFGenerator } from './PDFGenerator';
@@ -358,13 +358,7 @@ export const ItineraryViewer: React.FC = () => {
             <span className="text-lg font-semibold">aditya</span>
           </div>
           <div className="flex gap-2">
-            <Button 
-              onClick={() => window.open(`/preview/${shareUuid}`, '_blank')}
-              className="bg-blue-600 hover:bg-blue-700 border-blue-500"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Preview PDF
-            </Button>
+           
             <Button 
               onClick={handleDownloadPDF} 
               className="bg-green-600 hover:bg-green-700 border-green-500" 
@@ -546,6 +540,62 @@ export const ItineraryViewer: React.FC = () => {
                         </div>
                       )}
                     </div>
+                    
+                    {/* Social Media Links */}
+                    {(itinerary.user.company_details.facebook_url || 
+                      itinerary.user.company_details.whatsapp_url || 
+                      itinerary.user.company_details.instagram_url || 
+                      itinerary.user.company_details.youtube_url) && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <h5 className="text-sm font-medium text-gray-700 mb-3">Follow Us</h5>
+                        <div className="flex flex-wrap gap-3">
+                          {itinerary.user.company_details.facebook_url && (
+                            <a 
+                              href={itinerary.user.company_details.facebook_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                            >
+                              <Facebook className="h-4 w-4" />
+                              Facebook
+                            </a>
+                          )}
+                          {itinerary.user.company_details.whatsapp_url && (
+                            <a 
+                              href={itinerary.user.company_details.whatsapp_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                              WhatsApp
+                            </a>
+                          )}
+                          {itinerary.user.company_details.instagram_url && (
+                            <a 
+                              href={itinerary.user.company_details.instagram_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors text-sm"
+                            >
+                              <Instagram className="h-4 w-4" />
+                              Instagram
+                            </a>
+                          )}
+                          {itinerary.user.company_details.youtube_url && (
+                            <a 
+                              href={itinerary.user.company_details.youtube_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                            >
+                              <Youtube className="h-4 w-4" />
+                              YouTube
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

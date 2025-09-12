@@ -19,11 +19,18 @@ import {
   Check,
   MapPin,
   DollarSign,
-  Share2
+  Share2,
+  Mail,
+  Phone,
+  Globe,
+  Facebook,
+  MessageCircle,
+  Instagram,
+  Youtube
 } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { itineraryApi, packageApi, imageApi } from '../services/api';
-import type { Itinerary, Package as PackageType } from '../services/api';
+import { itineraryApi, packageApi, imageApi, companyDetailsApi } from '../services/api';
+import type { Itinerary, Package as PackageType, CompanyDetails } from '../services/api';
 
 import { PackageInfoModal } from './PackageInfoModal';
 import { EventModal } from './EventModal';
@@ -122,6 +129,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
   const [showDatePicker, setShowDatePicker] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [pendingPackageData, setPendingPackageData] = useState<any>(null);
+  const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
 
   useEffect(() => {
     if (isCreating) {
@@ -131,7 +139,20 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
       // Load existing package for editing
       loadPackageForEditing(packageId);
     }
+    // Load company details for preview
+    loadCompanyDetails();
   }, [isCreating, packageId]);
+
+  const loadCompanyDetails = async () => {
+    try {
+      const response = await companyDetailsApi.get();
+      if (response.data.success && response.data.data) {
+        setCompanyDetails(response.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to load company details:', error);
+    }
+  };
 
   const loadPackageForEditing = async (id: string) => {
     try {
@@ -1504,6 +1525,130 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                          </ul>
                        </div>
                      )}
+                   </div>
+                 )}
+
+                 {/* Company Details Section */}
+                 {companyDetails && (
+                   <div className="mt-12 bg-white rounded-lg border p-6">
+                     <h3 className="text-xl font-bold mb-4">Company Information</h3>
+                     <div className="flex items-start gap-6">
+                       {/* Company Logo */}
+                       {companyDetails.logo && (
+                         <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                           <img 
+                             src={companyDetails.logo.startsWith('http') ? companyDetails.logo : `http://localhost:8000${companyDetails.logo}`} 
+                             alt="Company Logo" 
+                             className="w-full h-full object-contain"
+                           />
+                         </div>
+                       )}
+                       
+                       {/* Company Details */}
+                       <div className="flex-1 space-y-4">
+                         <div>
+                           <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                             {companyDetails.company_name}
+                           </h4>
+                           {companyDetails.description && (
+                             <p className="text-gray-600 leading-relaxed">
+                               {companyDetails.description}
+                             </p>
+                           )}
+                         </div>
+                         
+                         {/* Contact Information */}
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           {companyDetails.email && (
+                             <div className="flex items-center gap-2 text-gray-600">
+                               <Mail className="h-4 w-4 text-blue-500" />
+                               <span>{companyDetails.email}</span>
+                             </div>
+                           )}
+                           {companyDetails.phone && (
+                             <div className="flex items-center gap-2 text-gray-600">
+                               <Phone className="h-4 w-4 text-blue-500" />
+                               <span>{companyDetails.phone}</span>
+                             </div>
+                           )}
+                           {companyDetails.website && (
+                             <div className="flex items-center gap-2 text-gray-600">
+                               <Globe className="h-4 w-4 text-blue-500" />
+                               <a 
+                                 href={companyDetails.website} 
+                                 target="_blank" 
+                                 rel="noopener noreferrer"
+                                 className="text-blue-600 hover:text-blue-800 hover:underline"
+                               >
+                                 {companyDetails.website}
+                               </a>
+                             </div>
+                           )}
+                           {companyDetails.address && (
+                             <div className="flex items-start gap-2 text-gray-600">
+                               <MapPin className="h-4 w-4 text-blue-500 mt-0.5" />
+                               <span className="text-sm">{companyDetails.address}</span>
+                             </div>
+                           )}
+                         </div>
+                         
+                         {/* Social Media Links */}
+                         {(companyDetails.facebook_url || 
+                           companyDetails.whatsapp_url || 
+                           companyDetails.instagram_url || 
+                           companyDetails.youtube_url) && (
+                           <div className="mt-4 pt-4 border-t border-gray-200">
+                             <h5 className="text-sm font-medium text-gray-700 mb-3">Follow Us</h5>
+                             <div className="flex flex-wrap gap-3">
+                               {companyDetails.facebook_url && (
+                                 <a 
+                                   href={companyDetails.facebook_url} 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                                 >
+                                   <Facebook className="h-4 w-4" />
+                                   Facebook
+                                 </a>
+                               )}
+                               {companyDetails.whatsapp_url && (
+                                 <a 
+                                   href={companyDetails.whatsapp_url} 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                                 >
+                                   <MessageCircle className="h-4 w-4" />
+                                   WhatsApp
+                                 </a>
+                               )}
+                               {companyDetails.instagram_url && (
+                                 <a 
+                                   href={companyDetails.instagram_url} 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   className="flex items-center gap-2 px-3 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors text-sm"
+                                 >
+                                   <Instagram className="h-4 w-4" />
+                                   Instagram
+                                 </a>
+                               )}
+                               {companyDetails.youtube_url && (
+                                 <a 
+                                   href={companyDetails.youtube_url} 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                                 >
+                                   <Youtube className="h-4 w-4" />
+                                   YouTube
+                                 </a>
+                               )}
+                             </div>
+                           </div>
+                         )}
+                       </div>
+                     </div>
                    </div>
                  )}
                </div>

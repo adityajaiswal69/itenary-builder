@@ -41,6 +41,10 @@ class CompanyDetailsController extends Controller
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:1000',
             'website' => 'nullable|url|max:255',
+            'facebook_url' => 'nullable|url|max:255',
+            'whatsapp_url' => 'nullable|url|max:255',
+            'instagram_url' => 'nullable|url|max:255',
+            'youtube_url' => 'nullable|url|max:255',
             'description' => 'nullable|string|max:2000',
         ]);
 
@@ -63,6 +67,10 @@ class CompanyDetailsController extends Controller
                 'phone',
                 'address',
                 'website',
+                'facebook_url',
+                'whatsapp_url',
+                'instagram_url',
+                'youtube_url',
                 'description'
             ])
         );

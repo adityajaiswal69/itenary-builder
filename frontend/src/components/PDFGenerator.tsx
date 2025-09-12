@@ -252,13 +252,14 @@ export const usePDFGenerator = ({
       `;
     };
     
-    // Helper function to create simple footer
-    const createFooter = (pageNumber: number) => `
+
+  // Helper function to create simple footer
+  const createFooter = (pageNumber: number) => `
       <div style="position: absolute; bottom: 20px; left: 40px; right: 40px; text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 15px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; gap: 30px;">
-          ${user?.phone ? `<span><strong>Mobile:</strong> ${user.phone}</span>` : ''}
-          ${user?.email ? `<span><strong>Email:</strong> ${user.email}</span>` : ''}
+          ${companyDetails?.phone || user?.phone ? `<span><strong>Mobile:</strong> ${companyDetails?.phone || user?.phone}</span>` : ''}
+          ${companyDetails?.email || user?.email ? `<span><strong>Email:</strong> ${companyDetails?.email || user?.email}</span>` : ''}
         </div>
           <div style="font-weight: 600;">Page ${pageNumber}</div>
         </div>
@@ -285,7 +286,7 @@ export const usePDFGenerator = ({
           <!-- Company Information -->
           <div style="text-align: center; padding: 20px; border-bottom: 2px solid #e5e7eb;">
             ${companyDetails?.logo ? `
-              <div style="margin-bottom: 10px;">
+              <div style="margin-bottom: 10px; display: flex; justify-content: center; align-items: center;">
                 <img src="${imageBase64Map.get(companyDetails.logo) || companyDetails.logo}" alt="Company Logo" style="max-height: 50px; max-width: 150px; object-fit: contain;" />
               </div>
             ` : ''}
@@ -328,10 +329,23 @@ export const usePDFGenerator = ({
             <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #3b82f6;">
               <h4 style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0; color: #1e40af;">For more info:</h4>
               <div style="font-size: 12px; color: #1e40af; line-height: 1.5;">
-                ${companyDetails?.website ? `<div style="margin-bottom: 3px;"><strong>Website:</strong> ${companyDetails.website}</div>` : ''}
+                ${companyDetails?.website ? `<div style="margin-bottom: 3px;"><strong>Website:</strong> <a href="${companyDetails.website}" target="_blank" style="color: #1e40af; text-decoration: underline;">${companyDetails.website}</a></div>` : ''}
                 <div style="margin-bottom: 3px;"><strong>Email:</strong> ${companyDetails?.email || user?.email || 'info@company.com'}</div>
                 <div style="margin-bottom: 3px;"><strong>Phone:</strong> ${companyDetails?.phone || user?.phone || 'Contact Number'}</div>
-                ${companyDetails?.address ? `<div><strong>Address:</strong> ${companyDetails.address}</div>` : ''}
+                ${companyDetails?.address ? `<div style="margin-bottom: 3px;"><strong>Address:</strong> ${companyDetails.address}</div>` : ''}
+                
+                <!-- Social Media Links -->
+                ${(companyDetails?.facebook_url || companyDetails?.whatsapp_url || companyDetails?.instagram_url || companyDetails?.youtube_url) ? `
+                  <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #cbd5e1;">
+                    <div style="font-weight: bold; margin-bottom: 5px; color: #1e40af;">Follow Us:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                      ${companyDetails?.facebook_url ? `<a href="${companyDetails.facebook_url}" target="_blank" style="color: #1877f2; text-decoration: underline; font-size: 11px;">📘 Facebook</a>` : ''}
+                      ${companyDetails?.whatsapp_url ? `<a href="${companyDetails.whatsapp_url}" target="_blank" style="color: #25d366; text-decoration: underline; font-size: 11px;">📱 WhatsApp</a>` : ''}
+                      ${companyDetails?.instagram_url ? `<a href="${companyDetails.instagram_url}" target="_blank" style="color: #e4405f; text-decoration: underline; font-size: 11px;">📷 Instagram</a>` : ''}
+                      ${companyDetails?.youtube_url ? `<a href="${companyDetails.youtube_url}" target="_blank" style="color: #ff0000; text-decoration: underline; font-size: 11px;">📺 YouTube</a>` : ''}
+                    </div>
+                  </div>
+                ` : ''}
               </div>
             </div>
           </div>
@@ -467,10 +481,23 @@ export const usePDFGenerator = ({
           <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-left: 3px solid #3b82f6;">
             <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0; color: #1f2937;">${companyDetails?.company_name || 'Company Name'}</h3>
             <div style="font-size: 12px; color: #4b5563; line-height: 1.5;">
-              ${companyDetails?.website ? `<div style="margin-bottom: 3px;"><strong>Website:</strong> ${companyDetails.website}</div>` : ''}
+              ${companyDetails?.website ? `<div style="margin-bottom: 3px;"><strong>Website:</strong> <a href="${companyDetails.website}" target="_blank" style="color: #1e40af; text-decoration: underline;">${companyDetails.website}</a></div>` : ''}
               <div style="margin-bottom: 3px;"><strong>Email:</strong> ${companyDetails?.email || user?.email || 'info@company.com'}</div>
               <div style="margin-bottom: 3px;"><strong>Phone:</strong> ${companyDetails?.phone || user?.phone || 'Contact Number'}</div>
-              ${companyDetails?.address ? `<div><strong>Address:</strong> ${companyDetails.address}</div>` : ''}
+              ${companyDetails?.address ? `<div style="margin-bottom: 3px;"><strong>Address:</strong> ${companyDetails.address}</div>` : ''}
+              
+              <!-- Social Media Links -->
+              ${(companyDetails?.facebook_url || companyDetails?.whatsapp_url || companyDetails?.instagram_url || companyDetails?.youtube_url) ? `
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #cbd5e1;">
+                  <div style="font-weight: bold; margin-bottom: 5px; color: #1f2937;">Follow Us:</div>
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    ${companyDetails?.facebook_url ? `<a href="${companyDetails.facebook_url}" target="_blank" style="color: #1877f2; text-decoration: underline; font-size: 11px;">📘 Facebook</a>` : ''}
+                    ${companyDetails?.whatsapp_url ? `<a href="${companyDetails.whatsapp_url}" target="_blank" style="color: #25d366; text-decoration: underline; font-size: 11px;">📱 WhatsApp</a>` : ''}
+                    ${companyDetails?.instagram_url ? `<a href="${companyDetails.instagram_url}" target="_blank" style="color: #e4405f; text-decoration: underline; font-size: 11px;">📷 Instagram</a>` : ''}
+                    ${companyDetails?.youtube_url ? `<a href="${companyDetails.youtube_url}" target="_blank" style="color: #ff0000; text-decoration: underline; font-size: 11px;">📺 YouTube</a>` : ''}
+                  </div>
+                </div>
+              ` : ''}
             </div>
           </div>
 
@@ -479,6 +506,67 @@ export const usePDFGenerator = ({
         </div>
       </div>
     `;
+  };
+
+  // Helper function to add clickable links to PDF using textWithLink
+  const addClickableLinksToPDF = (pdf: jsPDF, itinerary: Itinerary) => {
+    const user = itinerary.user;
+    const companyDetails = user?.company_details;
+    
+    if (!companyDetails) return;
+    
+    // Set font for links
+    pdf.setFontSize(11);
+    pdf.setTextColor(30, 64, 175); // Blue color for links
+    
+    // Page 1 - Contact Information section
+    // Website link (in the "For more info" section)
+    if (companyDetails.website) {
+      pdf.textWithLink(companyDetails.website, 50, 180, { url: companyDetails.website });
+    }
+    
+    // Social media links on page 1 (in the "Follow Us" section)
+    if (companyDetails.facebook_url) {
+      pdf.textWithLink('📘 Facebook', 50, 200, { url: companyDetails.facebook_url });
+    }
+    if (companyDetails.whatsapp_url) {
+      pdf.textWithLink('📱 WhatsApp', 75, 200, { url: companyDetails.whatsapp_url });
+    }
+    if (companyDetails.instagram_url) {
+      pdf.textWithLink('📷 Instagram', 100, 200, { url: companyDetails.instagram_url });
+    }
+    if (companyDetails.youtube_url) {
+      pdf.textWithLink('📺 YouTube', 125, 200, { url: companyDetails.youtube_url });
+    }
+    
+    // Add links to the last page (Inclusions & Exclusions page) as well
+    const totalPages = pdf.getNumberOfPages();
+    if (totalPages > 1) {
+      // Switch to the last page
+      pdf.setPage(totalPages);
+      
+      // Add links to the contact section on the last page
+      if (companyDetails.website) {
+        pdf.textWithLink(companyDetails.website, 50, 250, { url: companyDetails.website });
+      }
+      
+      // Social media links on last page
+      if (companyDetails.facebook_url) {
+        pdf.textWithLink('📘 Facebook', 50, 270, { url: companyDetails.facebook_url });
+      }
+      if (companyDetails.whatsapp_url) {
+        pdf.textWithLink('📱 WhatsApp', 75, 270, { url: companyDetails.whatsapp_url });
+      }
+      if (companyDetails.instagram_url) {
+        pdf.textWithLink('📷 Instagram', 100, 270, { url: companyDetails.instagram_url });
+      }
+      if (companyDetails.youtube_url) {
+        pdf.textWithLink('📺 YouTube', 125, 270, { url: companyDetails.youtube_url });
+      }
+    }
+    
+    // Reset text color to default
+    pdf.setTextColor(0, 0, 0);
   };
 
   const downloadPDF = async () => {
@@ -642,6 +730,9 @@ export const usePDFGenerator = ({
         // Add the image for this page
         pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, yPosition, imgWidth, imgHeight);
       }
+
+      // Add clickable links to the PDF
+      addClickableLinksToPDF(pdf, itinerary);
 
       // Download PDF
       const fileName = `${itinerary.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_itinerary.pdf`;

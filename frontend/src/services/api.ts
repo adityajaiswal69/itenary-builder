@@ -48,6 +48,10 @@ export interface CompanyDetails {
   phone?: string;
   address?: string;
   website?: string;
+  facebook_url?: string;
+  whatsapp_url?: string;
+  instagram_url?: string;
+  youtube_url?: string;
   description?: string;
   created_at: string;
   updated_at: string;

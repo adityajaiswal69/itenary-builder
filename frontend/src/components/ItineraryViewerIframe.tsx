@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { Package, MapPin, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, User, Building2, Globe } from 'lucide-react';
+import { Package, MapPin, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, User, Building2, Globe, Facebook, MessageCircle, Instagram, Youtube } from 'lucide-react';
 import { shareApi } from '../services/api';
 import type { Itinerary } from '../services/api';
 import { usePDFGenerator } from './PDFGenerator';
@@ -386,6 +386,62 @@ export const ItineraryViewerIframe: React.FC = () => {
                         </div>
                       )}
                     </div>
+                    
+                    {/* Social Media Links */}
+                    {(itinerary.user.company_details.facebook_url || 
+                      itinerary.user.company_details.whatsapp_url || 
+                      itinerary.user.company_details.instagram_url || 
+                      itinerary.user.company_details.youtube_url) && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <h5 className="text-xs font-medium text-gray-700 mb-2">Follow Us</h5>
+                        <div className="flex flex-wrap gap-2">
+                          {itinerary.user.company_details.facebook_url && (
+                            <a 
+                              href={itinerary.user.company_details.facebook_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
+                            >
+                              <Facebook className="h-3 w-3" />
+                              Facebook
+                            </a>
+                          )}
+                          {itinerary.user.company_details.whatsapp_url && (
+                            <a 
+                              href={itinerary.user.company_details.whatsapp_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors"
+                            >
+                              <MessageCircle className="h-3 w-3" />
+                              WhatsApp
+                            </a>
+                          )}
+                          {itinerary.user.company_details.instagram_url && (
+                            <a 
+                              href={itinerary.user.company_details.instagram_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-2 py-1 bg-pink-600 text-white rounded text-xs hover:bg-pink-700 transition-colors"
+                            >
+                              <Instagram className="h-3 w-3" />
+                              Instagram
+                            </a>
+                          )}
+                          {itinerary.user.company_details.youtube_url && (
+                            <a 
+                              href={itinerary.user.company_details.youtube_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors"
+                            >
+                              <Youtube className="h-3 w-3" />
+                              YouTube
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

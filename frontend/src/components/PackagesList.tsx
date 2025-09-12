@@ -14,10 +14,18 @@ import {
   // Bell,
   User,
   ChevronDown,
-  Code
+  Code,
+  Facebook,
+  MessageCircle,
+  Instagram,
+  Youtube,
+  Mail,
+  Phone,
+  Globe,
+  MapPin
 } from 'lucide-react';
-import { packageApi } from '../services/api';
-import type { Package as PackageType } from '../services/api';
+import { packageApi, companyDetailsApi } from '../services/api';
+import type { Package as PackageType, CompanyDetails } from '../services/api';
 import { ProfileModal } from './ProfileModal';
 
 interface User {
@@ -44,10 +52,23 @@ export const PackagesList: React.FC<PackagesListProps> = ({
   const [searchDestination, setSearchDestination] = useState('');
   const [publishStatus, setPublishStatus] = useState('all');
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
 
   useEffect(() => {
     loadPackages();
+    loadCompanyDetails();
   }, []);
+
+  const loadCompanyDetails = async () => {
+    try {
+      const response = await companyDetailsApi.get();
+      if (response.data.success && response.data.data) {
+        setCompanyDetails(response.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to load company details:', error);
+    }
+  };
 
   const loadPackages = async () => {
     try {
@@ -144,9 +165,30 @@ export const PackagesList: React.FC<PackagesListProps> = ({
       <div className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              {/* <div className="w-8 h-8 bg-red-500 rounded"></div> */}
-              <span className="text-xl font-bold text-gray-800">Itinerary Manager</span>
+            <div className="flex items-center gap-3">
+              {companyDetails?.logo ? (
+                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                  <img 
+                    src={companyDetails.logo.startsWith('http') ? companyDetails.logo : `http://localhost:8000${companyDetails.logo}`} 
+                    alt="Company Logo" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <Package className="h-6 w-6 text-white" />
+                </div>
+              )}
+              <div>
+                <div className="text-xl font-bold text-gray-800">
+                  {companyDetails?.company_name || 'Itinerary Manager'}
+                </div>
+                {companyDetails?.description && (
+                  <div className="text-xs text-gray-500 max-w-xs truncate">
+                    {companyDetails.description}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -186,7 +228,7 @@ export const PackagesList: React.FC<PackagesListProps> = ({
       {/* Breadcrumbs */}
               <div className="bg-white px-6 py-3 border-b">
           <div className="text-sm text-gray-600">
-            HOME &gt; MY PACKAGES
+            MY PACKAGES
           </div>
         </div>
 
@@ -196,16 +238,136 @@ export const PackagesList: React.FC<PackagesListProps> = ({
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">List Packages</h1>
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="border-green-500 text-green-600 hover:bg-green-50">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Auto Itinerary
-            </Button>
+            
             <Button onClick={onCreatePackage} className="bg-purple-600 hover:bg-purple-700">
               <Plus className="h-4 w-4 mr-2" />
               New Package
             </Button>
           </div>
         </div>
+
+        {/* Company Information Card */}
+        {companyDetails && (
+          <div className="bg-white rounded-lg border p-6 mb-6">
+            <div className="flex items-start gap-6">
+              {/* Company Logo */}
+              {companyDetails.logo && (
+                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <img 
+                    src={companyDetails.logo.startsWith('http') ? companyDetails.logo : `http://localhost:8000${companyDetails.logo}`} 
+                    alt="Company Logo" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+              
+              {/* Company Details */}
+              <div className="flex-1 space-y-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    {companyDetails.company_name}
+                  </h3>
+                  {companyDetails.description && (
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      {companyDetails.description}
+                    </p>
+                  )}
+                </div>
+                
+                {/* Contact Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {companyDetails.email && (
+                    <div className="flex items-center gap-2 text-gray-600 text-sm">
+                      <Mail className="h-3 w-3 text-blue-500" />
+                      <span>{companyDetails.email}</span>
+                    </div>
+                  )}
+                  {companyDetails.phone && (
+                    <div className="flex items-center gap-2 text-gray-600 text-sm">
+                      <Phone className="h-3 w-3 text-blue-500" />
+                      <span>{companyDetails.phone}</span>
+                    </div>
+                  )}
+                  {companyDetails.website && (
+                    <div className="flex items-center gap-2 text-gray-600 text-sm">
+                      <Globe className="h-3 w-3 text-blue-500" />
+                      <a 
+                        href={companyDetails.website} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        {companyDetails.website}
+                      </a>
+                    </div>
+                  )}
+                  {companyDetails.address && (
+                    <div className="flex items-start gap-2 text-gray-600 text-sm">
+                      <MapPin className="h-3 w-3 text-blue-500 mt-0.5" />
+                      <span>{companyDetails.address}</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Social Media Links */}
+                {(companyDetails.facebook_url || 
+                  companyDetails.whatsapp_url || 
+                  companyDetails.instagram_url || 
+                  companyDetails.youtube_url) && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <h5 className="text-xs font-medium text-gray-700 mb-2">Follow Us</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {companyDetails.facebook_url && (
+                        <a 
+                          href={companyDetails.facebook_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
+                        >
+                          <Facebook className="h-3 w-3" />
+                          Facebook
+                        </a>
+                      )}
+                      {companyDetails.whatsapp_url && (
+                        <a 
+                          href={companyDetails.whatsapp_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors"
+                        >
+                          <MessageCircle className="h-3 w-3" />
+                          WhatsApp
+                        </a>
+                      )}
+                      {companyDetails.instagram_url && (
+                        <a 
+                          href={companyDetails.instagram_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-2 py-1 bg-pink-600 text-white rounded text-xs hover:bg-pink-700 transition-colors"
+                        >
+                          <Instagram className="h-3 w-3" />
+                          Instagram
+                        </a>
+                      )}
+                      {companyDetails.youtube_url && (
+                        <a 
+                          href={companyDetails.youtube_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors"
+                        >
+                          <Youtube className="h-3 w-3" />
+                          YouTube
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-white rounded-lg border p-4 mb-6">
@@ -426,7 +588,11 @@ export const PackagesList: React.FC<PackagesListProps> = ({
       {/* Profile Modal */}
       <ProfileModal
         isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
+        onClose={() => {
+          setShowProfileModal(false);
+          // Reload company details when modal is closed
+          loadCompanyDetails();
+        }}
         user={user}
       />
     </div>

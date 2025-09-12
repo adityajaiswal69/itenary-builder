@@ -18,6 +18,10 @@ class CompanyDetails extends Model
         'phone',
         'address',
         'website',
+        'facebook_url',
+        'whatsapp_url',
+        'instagram_url',
+        'youtube_url',
         'description',
     ];
 
