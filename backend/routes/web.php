@@ -30,20 +30,18 @@ Route::get('/storage/{path}', function ($path) {
     
     return response($file)
         ->header('Content-Type', $mimeType)
-        ->header('Access-Control-Allow-Origin', 'http://localhost:5173')
+        ->header('Access-Control-Allow-Origin', '*')
         ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
         ->header('Access-Control-Expose-Headers', 'Content-Type')
-        ->header('Access-Control-Allow-Credentials', 'true')
         ->header('Cache-Control', 'public, max-age=3600');
 })->where('path', '.*');
 
 // Handle OPTIONS requests for CORS preflight
 Route::options('/storage/{path}', function () {
     return response('')
-        ->header('Access-Control-Allow-Origin', 'http://localhost:5173')
+        ->header('Access-Control-Allow-Origin', '*')
         ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
-        ->header('Access-Control-Allow-Credentials', 'true')
         ->header('Access-Control-Max-Age', '86400');
 })->where('path', '.*');

@@ -169,7 +169,7 @@ export const PackagesList: React.FC<PackagesListProps> = ({
               {companyDetails?.logo ? (
                 <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
                   <img 
-                    src={companyDetails.logo.startsWith('http') ? companyDetails.logo : `http://localhost:8000${companyDetails.logo}`} 
+                    src={companyDetails.logo.startsWith('http') ? companyDetails.logo : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${companyDetails.logo}`} 
                     alt="Company Logo" 
                     className="w-full h-full object-contain"
                   />
@@ -254,7 +254,7 @@ export const PackagesList: React.FC<PackagesListProps> = ({
               {companyDetails.logo && (
                 <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                   <img 
-                    src={companyDetails.logo.startsWith('http') ? companyDetails.logo : `http://localhost:8000${companyDetails.logo}`} 
+                    src={companyDetails.logo.startsWith('http') ? companyDetails.logo : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${companyDetails.logo}`} 
                     alt="Company Logo" 
                     className="w-full h-full object-contain"
                   />

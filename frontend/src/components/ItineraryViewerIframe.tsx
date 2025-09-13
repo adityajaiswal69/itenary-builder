@@ -586,7 +586,7 @@ export const ItineraryViewerIframe: React.FC = () => {
                                     {event.images.map((image, imgIndex) => (
                                       <img
                                         key={imgIndex}
-                                        src={image.startsWith('http') ? image : `http://localhost:8000${image}`}
+                                        src={image.startsWith('http') ? image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${image}`}
                                         alt={`${event.title} ${imgIndex + 1}`}
                                         className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
                                         onClick={() => openImageSlider(event.images, imgIndex, event.title)}
@@ -631,7 +631,7 @@ export const ItineraryViewerIframe: React.FC = () => {
             
             <div className="relative">
               <img
-                src={imageSlider.images[imageSlider.currentIndex].startsWith('http') ? imageSlider.images[imageSlider.currentIndex] : `http://localhost:8000${imageSlider.images[imageSlider.currentIndex]}`}
+                src={imageSlider.images[imageSlider.currentIndex].startsWith('http') ? imageSlider.images[imageSlider.currentIndex] : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${imageSlider.images[imageSlider.currentIndex]}`}
                 alt={`${imageSlider.title} ${imageSlider.currentIndex + 1}`}
                 className="max-w-full max-h-full object-contain"
               />
