@@ -188,11 +188,42 @@ export const usePDFGenerator = ({
     return canvas.toDataURL('image/png');
   };
 
+  // Helper function to render rich text content
+  const renderRichText = (content: any): string => {
+    if (!content) return '';
+    
+    // If content is a string, return as is
+    if (typeof content === 'string') {
+      return content;
+    }
+    
+    // If content is an array of rich text objects (like from TipTap)
+    if (Array.isArray(content)) {
+      return content.map((item: any) => {
+        if (typeof item === 'string') return item;
+        if (item.type === 'paragraph' && item.content) {
+          return `<p>${item.content.map((c: any) => c.text || '').join('')}</p>`;
+        }
+        if (item.type === 'text' && item.text) {
+          return item.text;
+        }
+        return '';
+      }).join('');
+    }
+    
+    // If content is an object with HTML
+    if (content.html) {
+      return content.html;
+    }
+    
+    // Fallback: convert to string
+    return String(content);
+  };
+
   const generatePDFContent = (imageBase64Map: Map<string, string> = new Map()) => {
     const days = itinerary.content?.days || [];
     const user = itinerary.user;
     const companyDetails = user?.company_details;
-    const locations = currentPackage?.locations || [];
     
     // Helper function to create smart image grid with base64 images
     const createImageGrid = (images: string[], maxImages: number = 4) => {
@@ -203,18 +234,18 @@ export const usePDFGenerator = ({
       
       if (displayImages.length === 1) {
         return `
-          <div style="margin: 20px 0; text-align: center;">
-            <img src="${imageBase64Map.get(displayImages[0]) || displayImages[0]}" alt="Event image" style="max-width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+          <div style="margin: 15px 0; text-align: center;">
+            <img src="${imageBase64Map.get(displayImages[0]) || displayImages[0]}" alt="Event image" style="max-width: 100%; max-height: 250px; object-fit: cover; border-radius: 6px;" />
           </div>
         `;
       }
       
       if (displayImages.length === 2) {
         return `
-          <div style="display: flex; gap: 15px; margin: 20px 0;">
+          <div style="display: flex; gap: 12px; margin: 15px 0;">
             ${displayImages.map(img => `
               <div style="flex: 1;">
-                <img src="${imageBase64Map.get(img) || img}" alt="Event image" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                <img src="${imageBase64Map.get(img) || img}" alt="Event image" style="width: 100%; height: 180px; object-fit: cover; border-radius: 6px;" />
               </div>
             `).join('')}
           </div>
@@ -223,28 +254,28 @@ export const usePDFGenerator = ({
       
       if (displayImages.length === 3) {
         return `
-          <div style="display: flex; gap: 10px; margin: 20px 0;">
+          <div style="display: flex; gap: 8px; margin: 15px 0;">
             <div style="flex: 2;">
-              <img src="${imageBase64Map.get(displayImages[0]) || displayImages[0]}" alt="Event image" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+              <img src="${imageBase64Map.get(displayImages[0]) || displayImages[0]}" alt="Event image" style="width: 100%; height: 200px; object-fit: cover; border-radius: 6px;" />
             </div>
-            <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
-              <img src="${imageBase64Map.get(displayImages[1]) || displayImages[1]}" alt="Event image" style="width: 100%; height: 95px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
-              <img src="${imageBase64Map.get(displayImages[2]) || displayImages[2]}" alt="Event image" style="width: 100%; height: 95px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+              <img src="${imageBase64Map.get(displayImages[1]) || displayImages[1]}" alt="Event image" style="width: 100%; height: 96px; object-fit: cover; border-radius: 6px;" />
+              <img src="${imageBase64Map.get(displayImages[2]) || displayImages[2]}" alt="Event image" style="width: 100%; height: 96px; object-fit: cover; border-radius: 6px;" />
             </div>
           </div>
         `;
       }
       
-      // 4+ images - 2x2 grid
+      // 4+ images - 2x2 grid (like in reference images)
       return `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0;">
           ${displayImages.map(img => `
             <div>
-              <img src="${imageBase64Map.get(img) || img}" alt="Event image" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+              <img src="${imageBase64Map.get(img) || img}" alt="Event image" style="width: 100%; height: 140px; object-fit: cover; border-radius: 6px;" />
             </div>
           `).join('')}
           ${remainingCount > 0 ? `
-            <div style="display: flex; align-items: center; justify-content: center; background: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 8px; height: 120px; color: #6c757d; font-size: 14px; font-weight: 500;">
+            <div style="display: flex; align-items: center; justify-content: center; background: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 6px; height: 140px; color: #6c757d; font-size: 12px; font-weight: 500;">
               +${remainingCount} more
             </div>
           ` : ''}
@@ -271,15 +302,15 @@ export const usePDFGenerator = ({
         <!-- Page 1: Cover Page -->
         <div style="position: relative; min-height: 297mm; page-break-after: always;">
           <!-- Header with Cover Image -->
-          <div style="position: relative; height: 150px; margin: 0; overflow: hidden;">
+          <div style="position: relative; height: 180px; margin: 0; overflow: hidden;">
             ${itinerary.cover_image ? `
               <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: url('${imageBase64Map.get(itinerary.cover_image) || itinerary.cover_image}'); background-size: cover; background-position: center;"></div>
-              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4);"></div>
+              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3);"></div>
             ` : `
-              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #2563eb;"></div>
+              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);"></div>
             `}
-            <div style="position: relative; z-index: 2; text-align: center; padding: 40px 20px; color: white;">
-              <h1 style="font-size: 28px; font-weight: bold; margin: 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">${itinerary.title}</h1>
+            <div style="position: relative; z-index: 2; text-align: center; padding: 50px 20px; color: white;">
+              <h1 style="font-size: 32px; font-weight: bold; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); text-transform: uppercase; letter-spacing: 1px;">${itinerary.title}</h1>
             </div>
           </div>
 
@@ -295,57 +326,66 @@ export const usePDFGenerator = ({
           </div>
 
           <!-- Package Details -->
-          <div style="padding: 20px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-              <div style="flex: 1; margin-right: 20px;">
+          <div style="padding: 25px;">
+              <!-- Package Details and Cost in Flex Layout -->
+            <div style="display: flex; gap: 20px; margin-bottom: 25px; align-items: flex-start;">
+              <!-- Package Details Column -->
+              <div style="flex: 1;">
                 <h3 style="font-size: 16px; font-weight: bold; margin: 0 0 10px 0; color: #374151;">Package Details</h3>
                 <div style="font-size: 14px; color: #4b5563; line-height: 1.6;">
-                  <div style="margin-bottom: 5px;"><strong>Date of Travel:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                  <div style="margin-bottom: 5px;"><strong>Number of Pax:</strong> ${currentPackage?.people || 1} Adults</div>
-                  <div style="margin-bottom: 5px;"><strong>Number of Rooms:</strong> ${Math.ceil((currentPackage?.people || 1) / 2)} Rooms</div>
+                  <div style="margin-bottom: 8px;"><strong>Date of Travel:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                  <div style="margin-bottom: 8px;"><strong>Number of Pax:</strong> ${currentPackage?.people || 1} Adults</div>
+                  <div style="margin-bottom: 8px;"><strong>Number of Room:</strong> ${Math.ceil((currentPackage?.people || 1) / 2)} Room</div>
+                  <div style="margin-bottom: 8px;"><strong>Valid Till:</strong> ${currentPackage?.valid_till ? new Date(currentPackage.valid_till).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not specified'}</div>
+                  <div style="margin-bottom: 8px;"><strong>Start Location:</strong> ${currentPackage?.start_location || 'Not specified'}</div>
                   <div><strong>Mode of Transport:</strong> Tempo Traveler</div>
                 </div>
               </div>
-              <div style="flex: 1; text-align: center; background: #f0fdf4; padding: 15px; border: 1px solid #bbf7d0;">
-                <h3 style="font-size: 16px; font-weight: bold; margin: 0 0 10px 0; color: #166534;">Total Cost</h3>
-                <div style="font-size: 20px; font-weight: bold; color: #166534; margin-bottom: 5px;">
-                  ₹ (INR) ${currentPackage?.price?.toLocaleString() || '0'}
+              
+              <!-- Total Cost Column -->
+              ${currentPackage?.price ? `
+                <div style="flex: 1; text-align: center;">
+                  <div style="background: #f0fdf4; padding: 20px; border: 1px solid #bbf7d0; border-radius: 8px;">
+                    <h3 style="font-size: 16px; font-weight: bold; margin: 0 0 10px 0; color: #166534;">Total Cost</h3>
+                    <div style="font-size: 24px; font-weight: bold; color: #166534; margin-bottom: 5px;">
+                      ₹ (INR) ${currentPackage.price.toLocaleString()}
+                    </div>
+                    <div style="font-size: 12px; color: #15803d;">
+                      ${currentPackage.price_type === 'per_person' ? 'Per Person' : 'Total Package'}
+                      ${currentPackage.people ? ` (${currentPackage.people} people)` : ''}
+                    </div>
+                  </div>
                 </div>
-                <div style="font-size: 12px; color: #15803d;">
-                  ${currentPackage?.price_type === 'per_person' ? 'Per Person' : 'Total Package'}
+              ` : ''}
+            </div>
+            ${currentPackage?.description && Array.isArray(currentPackage.description) && currentPackage.description[0]?.content ? `
+              <div style="margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                <h3 style="font-size: 16px; font-weight: bold; margin: 0 0 10px 0; color: #1f2937;">Package Description</h3>
+                <div style="font-size: 14px; color: #374151; line-height: 1.6;">
+                  ${renderRichText(currentPackage.description[0].content)}
                 </div>
               </div>
-            </div>
+            ` : ''}
             
-            <!-- Greeting -->
-            <div style="margin-bottom: 20px;">
-              <h3 style="font-size: 16px; font-weight: bold; margin: 0 0 10px 0; color: #1f2937;">Dear Sir,</h3>
-              <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0;">
-                Thank you for choosing ${companyDetails?.company_name || 'our company'} for your travel needs. We are pleased to present you with this detailed itinerary for your upcoming journey.
-              </p>
-            </div>
+           
             
             <!-- Contact Information -->
-            <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #3b82f6;">
-              <h4 style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0; color: #1e40af;">For more info:</h4>
+            <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #dc2626;">
+              <h4 style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0; color: #dc2626;">For more info:</h4>
               <div style="font-size: 12px; color: #1e40af; line-height: 1.5;">
                 ${companyDetails?.website ? `<div style="margin-bottom: 3px;"><strong>Website:</strong> <a href="${companyDetails.website}" target="_blank" style="color: #1e40af; text-decoration: underline;">${companyDetails.website}</a></div>` : ''}
                 <div style="margin-bottom: 3px;"><strong>Email:</strong> ${companyDetails?.email || user?.email || 'info@company.com'}</div>
                 <div style="margin-bottom: 3px;"><strong>Phone:</strong> ${companyDetails?.phone || user?.phone || 'Contact Number'}</div>
                 ${companyDetails?.address ? `<div style="margin-bottom: 3px;"><strong>Address:</strong> ${companyDetails.address}</div>` : ''}
-                
-                <!-- Social Media Links -->
-                ${(companyDetails?.facebook_url || companyDetails?.whatsapp_url || companyDetails?.instagram_url || companyDetails?.youtube_url) ? `
-                  <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #cbd5e1;">
-                    <div style="font-weight: bold; margin-bottom: 5px; color: #1e40af;">Follow Us:</div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                      ${companyDetails?.facebook_url ? `<a href="${companyDetails.facebook_url}" target="_blank" style="color: #1877f2; text-decoration: underline; font-size: 11px;">📘 Facebook</a>` : ''}
-                      ${companyDetails?.whatsapp_url ? `<a href="${companyDetails.whatsapp_url}" target="_blank" style="color: #25d366; text-decoration: underline; font-size: 11px;">📱 WhatsApp</a>` : ''}
-                      ${companyDetails?.instagram_url ? `<a href="${companyDetails.instagram_url}" target="_blank" style="color: #e4405f; text-decoration: underline; font-size: 11px;">📷 Instagram</a>` : ''}
-                      ${companyDetails?.youtube_url ? `<a href="${companyDetails.youtube_url}" target="_blank" style="color: #ff0000; text-decoration: underline; font-size: 11px;">📺 YouTube</a>` : ''}
-                    </div>
-                  </div>
-                ` : ''}
+              </div>
+              
+              <!-- Regards Section -->
+              <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #cbd5e1;">
+                <div style="font-size: 12px; color: #374151; line-height: 1.5;">
+                  <div style="font-weight: bold; margin-bottom: 5px;">Regards (For any enquiries, please feel free to call us):</div>
+                  <div style="margin-bottom: 3px;"><strong>${companyDetails?.company_name || 'Company Name'}</strong> - ${companyDetails?.phone || user?.phone || 'Contact Number'}</div>
+                  <div><strong>Office</strong> - ${companyDetails?.phone || user?.phone || 'Contact Number'}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -356,34 +396,24 @@ export const usePDFGenerator = ({
         
         <!-- Page 2: Package Summary -->
         <div style="page-break-before: always; font-family: Arial, sans-serif; line-height: 1.4; color: #333; width: 210mm; padding: 40px; margin: 0; min-height: 297mm; background: white; position: relative; padding-bottom: 80px; page-break-after: always;">
-          <div style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 30px; border-radius: 12px; margin-bottom: 40px; border: 2px solid #cbd5e1; text-align: center;">
-            <h1 style="font-size: 28px; font-weight: 700; margin: 0; color: #1f2937;">Package Summary</h1>
-            <p style="font-size: 14px; color: #6b7280; margin: 10px 0 0 0;">Detailed overview of your travel package</p>
+          <div style="text-align: center; margin-bottom: 40px;">
+            <h1 style="font-size: 24px; font-weight: bold; margin: 0 0 10px 0; color: #1f2937;">Brief Itinerary</h1>
           </div>
           
-          <h2 style="font-size: 28px; font-weight: bold; margin: 0 0 20px 0; color: #2d3748;">${itinerary.title}</h2>
           
-          <div style="background: #fed7cc; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-            <p style="margin: 0; color: #7c2d12; font-weight: 500;">${currentPackage?.start_location || 'Delhi'}, ${locations.join(', ')} - ${currentPackage?.people || 1} Nights Stay</p>
-          </div>
 
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; page-break-inside: avoid;">
-            <tbody>
-              ${days.map((day: any, index: number) => `
-                <tr style="border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
-                  <td style="padding: 15px; background: #f8fafc; border-right: 1px solid #e2e8f0; font-weight: 600; color: #4a5568; width: 150px; vertical-align: top;">
-                    Day ${index + 1}<br/>
+          <div style="margin-bottom: 30px;">
+            ${days.map((day: any) => `
+              <div style="margin-bottom: 15px; padding: 12px; background: #f8f9fa; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                <div style="font-weight: bold; color: #1f2937; font-size: 14px;">
+                  ${day.title.toUpperCase()}
+                </div>
                     <span style="font-size: 12px; font-weight: normal; color: #718096;">
                       (${new Date().toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })})
                     </span>
-                  </td>
-                  <td style="padding: 15px; color: #4a5568; vertical-align: top;">
-                    ${day.title} Details
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+              </div>
+            `).join('')}
+          </div>
           
           <!-- Page 2 Footer -->
           ${createFooter(2)}
@@ -393,53 +423,102 @@ export const usePDFGenerator = ({
         ${days.map((day: any, dayIndex: number) => `
           <div style="page-break-before: always; font-family: Arial, sans-serif; line-height: 1.4; color: #333; width: 210mm; padding: 20px; margin: 0; min-height: 297mm; background: white; position: relative; padding-bottom: 60px;">
             <!-- Day Header -->
-            <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 15px;">
-              <h1 style="font-size: 20px; font-weight: bold; margin: 0 0 5px 0; color: #1f2937;">Day ${dayIndex + 1}: ${day.title}</h1>
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="font-size: 24px; font-weight: bold; margin: 0 0 8px 0; color: #1f2937; text-transform: uppercase;">DETAILED ITINERARY</h1>
+              <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: #059669; font-style: italic;"> ${day.title}</h2>
               <div style="font-size: 12px; color: #6b7280;">
                 ${new Date().toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
               </div>
             </div>
               
-            <!-- Events -->
-            ${day.events?.map((event: any) => `
-              <div style="margin-bottom: 20px; page-break-inside: avoid;">
-                <div style="border: 1px solid #e5e7eb; margin-bottom: 10px;">
-                  <!-- Event Header -->
-                  <div style="background: #f8f9fa; padding: 10px 15px; border-bottom: 1px solid #e5e7eb;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                      <span style="background: #3b82f6; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600;">
-                        ${event.category || 'Activity'}
-                      </span>
-                      <h3 style="font-size: 14px; font-weight: 600; margin: 0; color: #1f2937;">${event.title}</h3>
-                    </div>
+            <!-- Day Content -->
+            <div style="margin-bottom: 30px;">
+              ${day.events?.map((event: any) => `
+                <div style="margin-bottom: 20px; page-break-inside: avoid;">
+                  <!-- Event Title -->
+                  <h4 style="font-size: 16px; font-weight: bold; color: #1f2937; margin: 0 0 8px 0; text-transform: uppercase;">
+                    ${event.title}
+                  </h4>
+                  
+                  <!-- Event Details -->
+                  <div style="margin-bottom: 12px; font-size: 14px; color: #374151; line-height: 1.6;">
+                    ${event.category ? ` ${event.category}` : ''}
+                    ${event.subCategory && event.subCategory !== event.category ? ` |  ${event.subCategory}` : ''}
+                    ${event.type ? ` | <strong>Type:</strong> ${event.type}` : ''}
+                    ${event.time ? ` | <strong>Time:</strong> ${event.time}` : ''}
                   </div>
                   
-                  <!-- Event Content -->
-                  <div style="padding: 15px;">
-                    ${event.notes ? `
-                      <div style="margin-bottom: 10px;">
-                        <p style="font-size: 12px; color: #4b5563; margin: 0; line-height: 1.5;">
-                          ${event.notes.replace(/<[^>]*>/g, '').substring(0, 200)}${event.notes.length > 200 ? '...' : ''}
-                        </p>
-                      </div>
-                    ` : ''}
-                    
-                    ${event.images && event.images.length > 0 ? createImageGrid(event.images, 2) : ''}
-                  </div>
+                  <!-- Category-specific Details -->
+                  ${event.category === 'Hotel' && (event.roomBedType || event.hotelType || event.confirmationNumber) ? `
+                    <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
+                      ${event.roomBedType ? `<strong>Room Type:</strong> ${event.roomBedType}` : ''}
+                      ${event.hotelType ? ` | <strong>Hotel Type:</strong> ${event.hotelType}` : ''}
+                      ${event.confirmationNumber ? ` | <strong>Confirmation:</strong> ${event.confirmationNumber}` : ''}
+                    </div>
+                  ` : ''}
+                  
+                  ${event.category === 'Flights' && (event.from || event.to || event.airlines || event.flightNumber || event.terminal || event.gate) ? `
+                    <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
+                      ${event.from && event.to ? `<strong>Route:</strong> ${event.from} → ${event.to}` : ''}
+                      ${event.airlines ? ` | <strong>Airlines:</strong> ${event.airlines}` : ''}
+                      ${event.flightNumber ? ` | <strong>Flight:</strong> ${event.flightNumber}` : ''}
+                      ${event.terminal ? ` | <strong>Terminal:</strong> ${event.terminal}` : ''}
+                      ${event.gate ? ` | <strong>Gate:</strong> ${event.gate}` : ''}
+                    </div>
+                  ` : ''}
+                  
+                  ${event.category === 'Transport' && (event.carrier || event.transportNumber) ? `
+                    <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
+                      ${event.carrier ? `<strong>Carrier:</strong> ${event.carrier}` : ''}
+                      ${event.transportNumber ? ` | <strong>Transport Number:</strong> ${event.transportNumber}` : ''}
+                    </div>
+                  ` : ''}
+                  
+                  ${event.category === 'Activity' && (event.provider || event.duration) ? `
+                    <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
+                      ${event.provider ? `<strong>Provider:</strong> ${event.provider}` : ''}
+                      ${event.duration ? ` | <strong>Duration:</strong> ${event.duration}` : ''}
+                    </div>
+                  ` : ''}
+                  
+                  ${event.category === 'Cruise' && (event.cabinType || event.cabinNumber) ? `
+                    <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
+                      ${event.cabinType ? `<strong>Cabin Type:</strong> ${event.cabinType}` : ''}
+                      ${event.cabinNumber ? ` | <strong>Cabin Number:</strong> ${event.cabinNumber}` : ''}
+                    </div>
+                  ` : ''}
+                  
+                  <!-- Event Description -->
+                  ${event.notes ? `
+                    <div style="margin-bottom: 12px;">
+                      <p style="font-size: 14px; color: #374151; margin: 0; line-height: 1.6; text-align: justify;">
+                        ${event.notes.replace(/<[^>]*>/g, '')}
+                      </p>
+                    </div>
+                  ` : ''}
+                  
+                  <!-- Event Images -->
+                  ${event.images && event.images.length > 0 ? createImageGrid(event.images, 4) : ''}
+                  
+                  <!-- Price Information -->
+                  ${event.amount ? `
+                    <div style="margin-top: 8px; font-size: 13px; color: #166534; font-weight: 600;">
+                      <strong>Cost:</strong> ${event.currency || 'USD'} ${event.amount.toLocaleString()}
+                      ${event.bookedThrough ? ` (Booked through: ${event.bookedThrough})` : ''}
+                    </div>
+                  ` : ''}
+                  
+                  <!-- Separator line -->
+                  <div style="border-bottom: 1px solid #e5e7eb; margin: 15px 0;"></div>
                 </div>
-              </div>
-            `).join('') || `
-              <div style="text-align: center; padding: 30px; color: #6b7280;">
-                <p style="font-size: 14px; margin: 0;">No specific activities planned for this day.</p>
-              </div>
-            `}
-            
-            <!-- Day Footer -->
-            <div style="margin-top: 20px; padding: 10px; background: #f0fdf4; border-left: 3px solid #22c55e;">
-              <p style="font-size: 12px; color: #166534; margin: 0;">
-                Transfer to ${dayIndex < days.length - 1 ? 'next destination' : 'home'}, check in to the hotel in the evening to relax after a wonderful day
-              </p>
+              `).join('') || `
+                <div style="text-align: center; padding: 40px; color: #6b7280;">
+                  <p style="font-size: 14px; margin: 0;">No specific activities planned for this day.</p>
+                </div>
+              `}
             </div>
+            
+            
             
             <!-- Day Page Footer -->
             ${createFooter(dayIndex + 2)}
@@ -453,29 +532,32 @@ export const usePDFGenerator = ({
             <h1 style="font-size: 18px; font-weight: bold; margin: 0; color: #1f2937;">Inclusions & Exclusions</h1>
           </div>
 
-          <!-- Inclusions Section -->
-          ${currentPackage?.inclusions?.length ? `
-            <div style="margin-bottom: 20px;">
-              <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0; color: #166534;">✓ Inclusions</h3>
-              <div style="font-size: 12px; color: #374151; line-height: 1.5;">
-                ${currentPackage.inclusions.map((inclusion: string) => `
-                  <div style="margin-bottom: 5px;">• ${inclusion}</div>
-                `).join('')}
+          <!-- Inclusions & Exclusions in Flex Layout -->
+          <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+            <!-- Inclusions Section -->
+            ${currentPackage?.inclusions?.length ? `
+              <div style="flex: 1;">
+                <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0; color: #166534;">✓ Inclusions</h3>
+                <div style="font-size: 12px; color: #374151; line-height: 1.5;">
+                  ${currentPackage.inclusions.map((inclusion: string) => `
+                    <div style="margin-bottom: 5px;">• ${inclusion}</div>
+                  `).join('')}
+                </div>
               </div>
-            </div>
-          ` : ''}
+            ` : ''}
 
-          <!-- Exclusions Section -->
-          ${currentPackage?.exclusions?.length ? `
-            <div style="margin-bottom: 20px;">
-              <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0; color: #dc2626;">✗ Exclusions</h3>
-              <div style="font-size: 12px; color: #374151; line-height: 1.5;">
-                ${currentPackage.exclusions.map((exclusion: string) => `
-                  <div style="margin-bottom: 5px;">• ${exclusion}</div>
-                `).join('')}
+            <!-- Exclusions Section -->
+            ${currentPackage?.exclusions?.length ? `
+              <div style="flex: 1;">
+                <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0; color: #dc2626;">✗ Exclusions</h3>
+                <div style="font-size: 12px; color: #374151; line-height: 1.5;">
+                  ${currentPackage.exclusions.map((exclusion: string) => `
+                    <div style="margin-bottom: 5px;">• ${exclusion}</div>
+                  `).join('')}
+                </div>
               </div>
-            </div>
-          ` : ''}
+            ` : ''}
+          </div>
 
           <!-- Contact Information -->
           <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-left: 3px solid #3b82f6;">
@@ -509,64 +591,11 @@ export const usePDFGenerator = ({
   };
 
   // Helper function to add clickable links to PDF using textWithLink
-  const addClickableLinksToPDF = (pdf: jsPDF, itinerary: Itinerary) => {
-    const user = itinerary.user;
-    const companyDetails = user?.company_details;
-    
-    if (!companyDetails) return;
-    
-    // Set font for links
-    pdf.setFontSize(11);
-    pdf.setTextColor(30, 64, 175); // Blue color for links
-    
-    // Page 1 - Contact Information section
-    // Website link (in the "For more info" section)
-    if (companyDetails.website) {
-      pdf.textWithLink(companyDetails.website, 50, 180, { url: companyDetails.website });
-    }
-    
-    // Social media links on page 1 (in the "Follow Us" section)
-    if (companyDetails.facebook_url) {
-      pdf.textWithLink('📘 Facebook', 50, 200, { url: companyDetails.facebook_url });
-    }
-    if (companyDetails.whatsapp_url) {
-      pdf.textWithLink('📱 WhatsApp', 75, 200, { url: companyDetails.whatsapp_url });
-    }
-    if (companyDetails.instagram_url) {
-      pdf.textWithLink('📷 Instagram', 100, 200, { url: companyDetails.instagram_url });
-    }
-    if (companyDetails.youtube_url) {
-      pdf.textWithLink('📺 YouTube', 125, 200, { url: companyDetails.youtube_url });
-    }
-    
-    // Add links to the last page (Inclusions & Exclusions page) as well
-    const totalPages = pdf.getNumberOfPages();
-    if (totalPages > 1) {
-      // Switch to the last page
-      pdf.setPage(totalPages);
-      
-      // Add links to the contact section on the last page
-      if (companyDetails.website) {
-        pdf.textWithLink(companyDetails.website, 50, 250, { url: companyDetails.website });
-      }
-      
-      // Social media links on last page
-      if (companyDetails.facebook_url) {
-        pdf.textWithLink('📘 Facebook', 50, 270, { url: companyDetails.facebook_url });
-      }
-      if (companyDetails.whatsapp_url) {
-        pdf.textWithLink('📱 WhatsApp', 75, 270, { url: companyDetails.whatsapp_url });
-      }
-      if (companyDetails.instagram_url) {
-        pdf.textWithLink('📷 Instagram', 100, 270, { url: companyDetails.instagram_url });
-      }
-      if (companyDetails.youtube_url) {
-        pdf.textWithLink('📺 YouTube', 125, 270, { url: companyDetails.youtube_url });
-      }
-    }
-    
-    // Reset text color to default
-    pdf.setTextColor(0, 0, 0);
+  // Note: All links are now handled by HTML <a> tags in the content
+  const addClickableLinksToPDF = (_pdf: jsPDF, _itinerary: Itinerary) => {
+    // All links are now handled by HTML <a> tags in the generated content
+    // No PDF overlay links needed
+    return;
   };
 
   const downloadPDF = async () => {
