@@ -1163,9 +1163,10 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                         </div>
                       </div>
                       <h4 className="font-semibold mb-2">{event.title}</h4>
-                      <div className="prose max-w-none text-sm text-gray-700">
-                        {event.notes}
-                      </div>
+                      <div 
+                        className="prose max-w-none text-sm text-gray-700"
+                        dangerouslySetInnerHTML={{ __html: event.notes }}
+                      />
                       {event.images.length > 0 && (
                         <div className="grid grid-cols-2 gap-2 mt-3">
                           {event.images.map((image, index) => (

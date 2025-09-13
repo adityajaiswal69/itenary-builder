@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Table } from '@tiptap/extension-table';
@@ -6,12 +6,14 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { Button } from './ui/button';
+import { TablePropertiesModal } from './TablePropertiesModal';
+import { LinkModal } from './LinkModal';
 import {
   Bold,
   Italic,
   List,
   ListOrdered,
-  Link,
+  Link as LinkIcon,
   Unlink,
   Table as TableIcon,
   Code
@@ -28,13 +30,25 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   onChange,
   placeholder = 'Start typing here...'
 }) => {
-
+  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        link: {
+          openOnClick: false,
+          HTMLAttributes: {
+            class: 'text-blue-600 underline cursor-pointer',
+          },
+        },
+      }),
       Table.configure({
         resizable: true,
+        HTMLAttributes: {
+          class: 'border-collapse border border-gray-300',
+        },
+        allowTableNodeSelection: true,
       }),
       TableRow,
       TableHeader,
@@ -42,9 +56,10 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     ],
     content: value || '',
     onUpdate: ({ editor }) => {
-      // Get plain text content instead of HTML
-      const plainText = editor.getText();
-      onChange(plainText);
+      // Get HTML content to preserve formatting, tables, and links
+      const htmlContent = editor.getHTML();
+      console.log('Editor content updated:', htmlContent);
+      onChange(htmlContent);
     },
     editorProps: {
       attributes: {
@@ -54,25 +69,11 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     parseOptions: {
       preserveWhitespace: 'full',
     },
-  });
+    enablePasteRules: true,
+    enableInputRules: true,
+  }, [value]);
 
-  // Update editor content when value prop changes
-  useEffect(() => {
-    if (editor && value !== editor.getText()) {
-      try {
-        if (value && value.trim()) {
-          // Since we're now storing plain text, just set it directly
-          editor.commands.setContent(value, { emitUpdate: false });
-        } else {
-          editor.commands.clearContent();
-        }
-      } catch (error) {
-        console.warn('Error setting content:', error);
-        // Fallback: try to set as plain text
-        editor.commands.setContent(value || '');
-      }
-    }
-  }, [value, editor]);
+  // Content is now handled by the useEditor dependency array
 
   // Remove debug logging
   // useEffect(() => {
@@ -86,19 +87,51 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   }
 
   const insertLink = () => {
-    const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl);
+    console.log('Link button clicked, opening modal');
+    setIsLinkModalOpen(true);
+  };
 
-    if (url === null) {
-      return;
+  const handleLinkApply = (linkProperties: any) => {
+    try {
+      if (!editor) {
+        console.error('Editor not ready');
+        return;
+      }
+      
+      const { displayText, linkType, protocol, url, target, title, rel } = linkProperties;
+      
+      let href = '';
+      if (linkType === 'anchor') {
+        href = url.startsWith('#') ? url : `#${url}`;
+      } else {
+        href = protocol + url;
+      }
+      
+      const attributes: any = { href };
+      if (target && target !== 'not_set') {
+        attributes.target = target;
+      }
+      if (title) {
+        attributes.title = title;
+      }
+      if (rel) {
+        attributes.rel = rel;
+      }
+      
+      console.log('Inserting link with properties:', { displayText, href, attributes });
+      
+      if (displayText) {
+        // Insert new link with display text using TipTap's command
+        editor.chain().focus().insertContent(displayText).setLink(attributes).run();
+      } else {
+        // Apply link to selected text
+        editor.chain().focus().extendMarkRange('link').setLink(attributes).run();
+      }
+      
+      console.log('Link inserted successfully');
+    } catch (error) {
+      console.error('Error inserting link:', error);
     }
-
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      return;
-    }
-
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   };
 
   const removeLink = () => {
@@ -106,7 +139,58 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   };
 
   const insertTable = () => {
-    editor.chain().focus().insertTable({ rows: 2, cols: 2, withHeaderRow: true }).run();
+    console.log('Table button clicked, opening modal');
+    setIsTableModalOpen(true);
+  };
+
+  const handleTableApply = (tableProperties: any) => {
+    try {
+      if (!editor) {
+        console.error('Editor not ready');
+        return;
+      }
+      
+      const { rows, cols, headers } = tableProperties;
+      
+      // Use TipTap's built-in table insertion command
+      const withHeaderRow = headers === 'first_row' || headers === 'both';
+      
+      console.log('Inserting table with properties:', { rows, cols, withHeaderRow });
+      console.log('Editor state before insertion:', {
+        canInsertTable: editor.can().insertTable({ rows, cols, withHeaderRow }),
+        currentContent: editor.getHTML(),
+        selection: editor.state.selection
+      });
+      
+      // Force focus first
+      editor.commands.focus();
+      
+      // Insert the table
+      const success = editor.chain()
+        .focus()
+        .insertTable({ 
+          rows: rows, 
+          cols: cols, 
+          withHeaderRow: withHeaderRow 
+        })
+        .run();
+      
+      console.log('Table insertion result:', success);
+      
+      if (success) {
+        console.log('Table inserted successfully');
+        console.log('Editor HTML after insertion:', editor.getHTML());
+        
+        // Add caption if provided
+        if (tableProperties.caption) {
+          editor.chain().focus().insertContent(`<p><em>${tableProperties.caption}</em></p>`).run();
+        }
+      } else {
+        console.error('Table insertion failed');
+      }
+    } catch (error) {
+      console.error('Error inserting table:', error);
+    }
   };
 
   const toggleCodeView = () => {
@@ -114,9 +198,10 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      {/* Toolbar */}
-      <div className="bg-gray-50 border-b p-2 flex flex-wrap gap-1">
+    <>
+      <div className="border rounded-lg overflow-hidden">
+        {/* Toolbar */}
+        <div className="bg-gray-50 border-b p-2 flex flex-wrap gap-1">
         {/* Text Formatting */}
         <Button
           variant="ghost"
@@ -171,7 +256,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           className={editor.isActive('link') ? 'bg-gray-200' : ''}
           title="Insert Link"
         >
-          <Link className="h-4 w-4" />
+          <LinkIcon className="h-4 w-4" />
         </Button>
         <Button
           variant="ghost"
@@ -284,7 +369,77 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
           font-size: 0.8rem;
           padding: 0;
         }
+        
+        .ProseMirror a {
+          color: #2563eb;
+          text-decoration: underline;
+          cursor: pointer;
+        }
+        
+        .ProseMirror a:hover {
+          color: #1d4ed8;
+        }
+        
+        .ProseMirror table {
+          border-collapse: collapse;
+          margin: 1rem 0;
+          width: 100%;
+        }
+        
+        .ProseMirror table th,
+        .ProseMirror table td {
+          border: 1px solid #d1d5db;
+          padding: 0.5rem;
+          text-align: left;
+        }
+        
+        .ProseMirror table th {
+          background-color: #f9fafb;
+          font-weight: 600;
+        }
+        
+        .ProseMirror table tr:nth-child(even) {
+          background-color: #f9fafb;
+        }
+        
+        .ProseMirror table tr:hover {
+          background-color: #f3f4f6;
+        }
+        
+        .ProseMirror table caption {
+          font-size: 0.875rem;
+          color: #6b7280;
+          margin-bottom: 0.5rem;
+          text-align: left;
+        }
+        
+        .ProseMirror table th {
+          background-color: #f9fafb;
+          font-weight: 600;
+        }
+        
+        .ProseMirror table td,
+        .ProseMirror table th {
+          border: 1px solid #d1d5db;
+          padding: 0.5rem;
+          text-align: left;
+          vertical-align: top;
+        }
       `}</style>
-    </div>
+      </div>
+
+      {/* Modals */}
+      <TablePropertiesModal
+        isOpen={isTableModalOpen}
+        onClose={() => setIsTableModalOpen(false)}
+        onApply={handleTableApply}
+      />
+      
+      <LinkModal
+        isOpen={isLinkModalOpen}
+        onClose={() => setIsLinkModalOpen(false)}
+        onApply={handleLinkApply}
+      />
+    </>
   );
 };

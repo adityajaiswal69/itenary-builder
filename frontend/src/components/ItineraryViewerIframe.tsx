@@ -562,7 +562,10 @@ export const ItineraryViewerIframe: React.FC = () => {
                               </div>
                               
                               {event.notes && (
-                                <p className="text-gray-600 text-sm mb-2">{event.notes}</p>
+                                <div 
+                                  className="prose max-w-none text-sm text-gray-700 mb-3"
+                                  dangerouslySetInnerHTML={{ __html: event.notes }}
+                                />
                               )}
                               
                               <div className="flex flex-wrap gap-2 text-xs text-gray-500">

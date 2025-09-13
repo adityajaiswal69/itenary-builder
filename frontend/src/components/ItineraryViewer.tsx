@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { ArrowLeft, Package, MapPin, Calendar, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, Utensils, Eye, Building2, Globe, Facebook, MessageCircle, Instagram, Youtube } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, Calendar, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, Utensils, Building2, Globe, Facebook, MessageCircle, Instagram, Youtube } from 'lucide-react';
 import { shareApi } from '../services/api';
 import type { Itinerary } from '../services/api';
 import { usePDFGenerator } from './PDFGenerator';
