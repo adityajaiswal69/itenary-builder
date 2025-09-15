@@ -27,7 +27,38 @@ export const usePDFGenerator = ({
       const corsEnabledUrl = getCorsEnabledImageUrl(imageSrc);
       console.log(`Converting image: ${imageSrc} -> ${corsEnabledUrl}`);
       
-      // Strategy 1: Try direct fetch with no-cors mode (bypasses CORS)
+      // Strategy 1: Try direct fetch with CORS mode first
+      try {
+        const response = await fetch(corsEnabledUrl, {
+          mode: 'cors',
+          credentials: 'omit',
+          headers: {
+            'Accept': 'image/*',
+          },
+        });
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const dataURL = reader.result as string;
+              console.log(`Successfully converted image via CORS fetch: ${imageSrc.substring(imageSrc.lastIndexOf('/') + 1)}`);
+              resolve(dataURL);
+            };
+            reader.onerror = () => {
+              console.warn('Failed to convert blob to base64:', imageSrc);
+              resolve(createImagePlaceholder());
+            };
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch (corsError) {
+        console.warn('CORS fetch failed:', corsError);
+      }
+      
+      // Strategy 2: Try with no-cors mode as fallback
       try {
         const response = await fetch(corsEnabledUrl, {
           mode: 'no-cors',
@@ -77,37 +108,6 @@ export const usePDFGenerator = ({
         }
       } catch (noCorsError) {
         console.warn('No-cors fetch failed:', noCorsError);
-      }
-      
-      // Strategy 2: Try with CORS mode
-      try {
-        const response = await fetch(corsEnabledUrl, {
-          mode: 'cors',
-          credentials: 'omit',
-          headers: {
-            'Accept': 'image/*',
-          },
-        });
-        
-        if (response.ok) {
-          const blob = await response.blob();
-          
-          return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const dataURL = reader.result as string;
-              console.log(`Successfully converted image via CORS fetch: ${imageSrc.substring(imageSrc.lastIndexOf('/') + 1)}`);
-              resolve(dataURL);
-            };
-            reader.onerror = () => {
-              console.warn('Failed to convert blob to base64:', imageSrc);
-              resolve(createImagePlaceholder());
-            };
-            reader.readAsDataURL(blob);
-          });
-        }
-      } catch (corsError) {
-        console.warn('CORS fetch failed:', corsError);
       }
       
       // Strategy 3: Direct image loading with anonymous crossOrigin
