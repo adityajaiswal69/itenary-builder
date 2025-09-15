@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Table } from '@tiptap/extension-table';
@@ -71,16 +71,35 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     },
     enablePasteRules: true,
     enableInputRules: true,
-  }, [value]);
+  }, []); // Remove value from dependency array to prevent reinitialization
 
-  // Content is now handled by the useEditor dependency array
-
-  // Remove debug logging
-  // useEffect(() => {
-  //   if (editor) {
-  //     console.log('Editor initialized with content:', editor.getHTML());
-  //   }
-  // }, [editor]);
+  // Handle external value changes without losing cursor position
+  useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      // Only update if the content is actually different to avoid unnecessary updates
+      const currentContent = editor.getHTML();
+      if (currentContent !== value) {
+        // Store current cursor position
+        const { from, to } = editor.state.selection;
+        
+        // Update content
+        editor.commands.setContent(value || '');
+        
+        // Restore cursor position if it's still valid
+        try {
+          if (from <= editor.state.doc.content.size && to <= editor.state.doc.content.size) {
+            editor.commands.setTextSelection({ from, to });
+          } else {
+            // If cursor position is invalid, place at end
+            editor.commands.setTextSelection(editor.state.doc.content.size);
+          }
+        } catch (error) {
+          // If there's any error with cursor positioning, just focus at the end
+          editor.commands.setTextSelection(editor.state.doc.content.size);
+        }
+      }
+    }
+  }, [editor, value]);
 
   if (!editor) {
     return null;

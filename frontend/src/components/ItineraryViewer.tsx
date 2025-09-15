@@ -354,8 +354,22 @@ export const ItineraryViewer: React.FC = () => {
       <div className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-8 h-8 bg-gray-200 rounded"></div>
-            <span className="text-lg font-semibold">aditya</span>
+            {/* Company Logo */}
+            {itinerary.user?.company_details?.logo ? (
+              <div className="w-8 h-8 bg-white rounded border border-gray-200 flex items-center justify-center overflow-hidden">
+                <img 
+                  src={itinerary.user.company_details.logo.startsWith('http') ? itinerary.user.company_details.logo : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${itinerary.user.company_details.logo}`} 
+                  alt="Company Logo" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="w-8 h-8 bg-gray-200 rounded"></div>
+            )}
+            {/* User Name */}
+            <span className="text-lg font-semibold">
+              {itinerary.user?.name || 'Travel Agent'}
+            </span>
           </div>
           <div className="flex gap-2">
            

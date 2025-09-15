@@ -188,6 +188,25 @@ export const usePDFGenerator = ({
     return canvas.toDataURL('image/png');
   };
 
+  // Helper function to detect if content contains HTML tables
+  const containsTable = (content: string): boolean => {
+    if (!content) return false;
+    // Check for various table-related HTML tags
+    const tablePatterns = [
+      /<table[^>]*>/i,
+      /<Table[^>]*>/i,
+      /<TABLE[^>]*>/i,
+      /<tbody[^>]*>/i,
+      /<thead[^>]*>/i,
+      /<tfoot[^>]*>/i,
+      /<tr[^>]*>/i,
+      /<th[^>]*>/i,
+      /<td[^>]*>/i
+    ];
+    
+    return tablePatterns.some(pattern => pattern.test(content));
+  };
+
   // Helper function to render rich text content
   const renderRichText = (content: any): string => {
     if (!content) return '';
@@ -296,6 +315,78 @@ export const usePDFGenerator = ({
         </div>
       </div>
     `;
+
+  // Helper function to create a dedicated table page
+  const createTablePage = (event: any, dayTitle: string, pageNumber: number) => {
+    const tableContent = event.notes;
+    
+    return `
+      <div style="page-break-before: always; font-family: Arial, sans-serif; line-height: 1.4; color: #333; width: 210mm; padding: 20px; margin: 0; min-height: 297mm; background: white; position: relative; padding-bottom: 60px;">
+        <!-- Page Header -->
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="font-size: 20px; font-weight: bold; margin: 0 0 8px 0; color: #1f2937; text-transform: uppercase;">${event.title}</h1>
+          
+          <div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">
+            ${dayTitle} | ${new Date().toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+          </div>
+        </div>
+        
+        <!-- Table Content with Enhanced Styling -->
+        <div style="margin: 20px 0; padding: 20px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <div style="font-size: 14px; color: #374151; line-height: 1.6;">
+            <style>
+              table {
+                border-collapse: collapse;
+                width: 100%;
+                margin: 0;
+                font-family: Arial, sans-serif;
+                font-size: 12px;
+                background: white;
+              }
+              table th, table td {
+                border: 1px solid #d1d5db;
+                padding: 8px 12px;
+                text-align: left;
+                vertical-align: top;
+              }
+              table th {
+                background-color: #f9fafb;
+                font-weight: 600;
+                color: #1f2937;
+                border-bottom: 2px solid #d1d5db;
+              }
+              table tr:nth-child(even) {
+                background-color: #f9fafb;
+              }
+              table tr:hover {
+                background-color: #f3f4f6;
+              }
+              table caption {
+                font-size: 14px;
+                font-weight: 600;
+                color: #1f2937;
+                margin-bottom: 10px;
+                text-align: left;
+              }
+              /* Ensure tables fit within page width */
+              table {
+                max-width: 100%;
+                table-layout: auto;
+              }
+              table td, table th {
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+              }
+            </style>
+            ${tableContent}
+          </div>
+        </div>
+        
+        <!-- Page Footer -->
+        ${createFooter(pageNumber)}
+      </div>
+    `;
+  };
     
     return `
       <div style="font-family: Arial, sans-serif; line-height: 1.4; color: #333; width: 210mm; padding: 0; margin: 0;">
@@ -420,110 +511,130 @@ export const usePDFGenerator = ({
         </div>
 
         <!-- Day Wise Details Pages -->
-        ${days.map((day: any, dayIndex: number) => `
-          <div style="page-break-before: always; font-family: Arial, sans-serif; line-height: 1.4; color: #333; width: 210mm; padding: 20px; margin: 0; min-height: 297mm; background: white; position: relative; padding-bottom: 60px;">
-            <!-- Day Header -->
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="font-size: 24px; font-weight: bold; margin: 0 0 8px 0; color: #1f2937; text-transform: uppercase;">DETAILED ITINERARY</h1>
-              <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: #059669; font-style: italic;"> ${day.title}</h2>
-              <div style="font-size: 12px; color: #6b7280;">
-                ${new Date().toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
-              </div>
-            </div>
-              
-            <!-- Day Content -->
-            <div style="margin-bottom: 30px;">
-              ${day.events?.map((event: any) => `
-                <div style="margin-bottom: 20px; page-break-inside: avoid;">
-                  <!-- Event Title -->
-                  <h4 style="font-size: 16px; font-weight: bold; color: #1f2937; margin: 0 0 8px 0; text-transform: uppercase;">
-                    ${event.title}
-                  </h4>
-                  
-                  <!-- Event Details -->
-                  <div style="margin-bottom: 12px; font-size: 14px; color: #374151; line-height: 1.6;">
-                    ${event.category ? ` ${event.category}` : ''}
-                    ${event.subCategory && event.subCategory !== event.category ? ` |  ${event.subCategory}` : ''}
-                    ${event.type ? ` | <strong>Type:</strong> ${event.type}` : ''}
-                    ${event.time ? ` | <strong>Time:</strong> ${event.time}` : ''}
+        ${(() => {
+          let currentPageNumber = 3; // Start from page 3 (after cover and summary)
+          let allPages = '';
+          
+          days.forEach((day: any) => {
+            // Separate table events from regular events
+            const tableEvents = day.events?.filter((event: any) => containsTable(event.notes)) || [];
+            const regularEvents = day.events?.filter((event: any) => !containsTable(event.notes)) || [];
+            
+            // Regular Events Page
+            allPages += `
+              <div style="page-break-before: always; font-family: Arial, sans-serif; line-height: 1.4; color: #333; width: 210mm; padding: 20px; margin: 0; min-height: 297mm; background: white; position: relative; padding-bottom: 60px;">
+                <!-- Day Header -->
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <h1 style="font-size: 24px; font-weight: bold; margin: 0 0 8px 0; color: #1f2937; text-transform: uppercase;">DETAILED ITINERARY</h1>
+                  <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: #059669; font-style: italic;"> ${day.title}</h2>
+                  <div style="font-size: 12px; color: #6b7280;">
+                    ${new Date().toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                   </div>
-                  
-                  <!-- Category-specific Details -->
-                  ${event.category === 'Hotel' && (event.roomBedType || event.hotelType || event.confirmationNumber) ? `
-                    <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
-                      ${event.roomBedType ? `<strong>Room Type:</strong> ${event.roomBedType}` : ''}
-                      ${event.hotelType ? ` | <strong>Hotel Type:</strong> ${event.hotelType}` : ''}
-                      ${event.confirmationNumber ? ` | <strong>Confirmation:</strong> ${event.confirmationNumber}` : ''}
-                    </div>
-                  ` : ''}
-                  
-                  ${event.category === 'Flights' && (event.from || event.to || event.airlines || event.flightNumber || event.terminal || event.gate) ? `
-                    <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
-                      ${event.from && event.to ? `<strong>Route:</strong> ${event.from} → ${event.to}` : ''}
-                      ${event.airlines ? ` | <strong>Airlines:</strong> ${event.airlines}` : ''}
-                      ${event.flightNumber ? ` | <strong>Flight:</strong> ${event.flightNumber}` : ''}
-                      ${event.terminal ? ` | <strong>Terminal:</strong> ${event.terminal}` : ''}
-                      ${event.gate ? ` | <strong>Gate:</strong> ${event.gate}` : ''}
-                    </div>
-                  ` : ''}
-                  
-                  ${event.category === 'Transport' && (event.carrier || event.transportNumber) ? `
-                    <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
-                      ${event.carrier ? `<strong>Carrier:</strong> ${event.carrier}` : ''}
-                      ${event.transportNumber ? ` | <strong>Transport Number:</strong> ${event.transportNumber}` : ''}
-                    </div>
-                  ` : ''}
-                  
-                  ${event.category === 'Activity' && (event.provider || event.duration) ? `
-                    <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
-                      ${event.provider ? `<strong>Provider:</strong> ${event.provider}` : ''}
-                      ${event.duration ? ` | <strong>Duration:</strong> ${event.duration}` : ''}
-                    </div>
-                  ` : ''}
-                  
-                  ${event.category === 'Cruise' && (event.cabinType || event.cabinNumber) ? `
-                    <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
-                      ${event.cabinType ? `<strong>Cabin Type:</strong> ${event.cabinType}` : ''}
-                      ${event.cabinNumber ? ` | <strong>Cabin Number:</strong> ${event.cabinNumber}` : ''}
-                    </div>
-                  ` : ''}
-                  
-                  <!-- Event Description -->
-                  ${event.notes ? `
-                    <div style="margin-bottom: 12px;">
-                      <p style="font-size: 14px; color: #374151; margin: 0; line-height: 1.6; text-align: justify;">
-                        ${event.notes.replace(/<[^>]*>/g, '')}
-                      </p>
-                    </div>
-                  ` : ''}
-                  
-                  <!-- Event Images -->
-                  ${event.images && event.images.length > 0 ? createImageGrid(event.images, 4) : ''}
-                  
-                  <!-- Price Information -->
-                  ${event.amount ? `
-                    <div style="margin-top: 8px; font-size: 13px; color: #166534; font-weight: 600;">
-                      <strong>Cost:</strong> ${event.currency || 'USD'} ${event.amount.toLocaleString()}
-                      ${event.bookedThrough ? ` (Booked through: ${event.bookedThrough})` : ''}
-                    </div>
-                  ` : ''}
-                  
-                  <!-- Separator line -->
-                  <div style="border-bottom: 1px solid #e5e7eb; margin: 15px 0;"></div>
                 </div>
-              `).join('') || `
-                <div style="text-align: center; padding: 40px; color: #6b7280;">
-                  <p style="font-size: 14px; margin: 0;">No specific activities planned for this day.</p>
+                  
+                <!-- Day Content -->
+                <div style="margin-bottom: 30px;">
+                  ${regularEvents.map((event: any) => `
+                    <div style="margin-bottom: 20px; page-break-inside: avoid;">
+                      <!-- Event Title -->
+                      <h4 style="font-size: 16px; font-weight: bold; color: #1f2937; margin: 0 0 8px 0; text-transform: uppercase;">
+                        ${event.title}
+                      </h4>
+                      
+                      <!-- Event Details -->
+                      <div style="margin-bottom: 12px; font-size: 14px; color: #374151; line-height: 1.6;">
+                        ${event.category ? ` ${event.category}` : ''}
+                        ${event.subCategory && event.subCategory !== event.category ? ` |  ${event.subCategory}` : ''}
+                        ${event.type ? ` | <strong>Type:</strong> ${event.type}` : ''}
+                        ${event.time ? ` | <strong>Time:</strong> ${event.time}` : ''}
+                      </div>
+                      
+                      <!-- Category-specific Details -->
+                      ${event.category === 'Hotel' && (event.roomBedType || event.hotelType || event.confirmationNumber) ? `
+                        <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
+                          ${event.roomBedType ? `<strong>Room Type:</strong> ${event.roomBedType}` : ''}
+                          ${event.hotelType ? ` | <strong>Hotel Type:</strong> ${event.hotelType}` : ''}
+                          ${event.confirmationNumber ? ` | <strong>Confirmation:</strong> ${event.confirmationNumber}` : ''}
+                        </div>
+                      ` : ''}
+                      
+                      ${event.category === 'Flights' && (event.from || event.to || event.airlines || event.flightNumber || event.terminal || event.gate) ? `
+                        <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
+                          ${event.from && event.to ? `<strong>Route:</strong> ${event.from} → ${event.to}` : ''}
+                          ${event.airlines ? ` | <strong>Airlines:</strong> ${event.airlines}` : ''}
+                          ${event.flightNumber ? ` | <strong>Flight:</strong> ${event.flightNumber}` : ''}
+                          ${event.terminal ? ` | <strong>Terminal:</strong> ${event.terminal}` : ''}
+                          ${event.gate ? ` | <strong>Gate:</strong> ${event.gate}` : ''}
+                        </div>
+                      ` : ''}
+                      
+                      ${event.category === 'Transport' && (event.carrier || event.transportNumber) ? `
+                        <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
+                          ${event.carrier ? `<strong>Carrier:</strong> ${event.carrier}` : ''}
+                          ${event.transportNumber ? ` | <strong>Transport Number:</strong> ${event.transportNumber}` : ''}
+                        </div>
+                      ` : ''}
+                      
+                      ${event.category === 'Activity' && (event.provider || event.duration) ? `
+                        <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
+                          ${event.provider ? `<strong>Provider:</strong> ${event.provider}` : ''}
+                          ${event.duration ? ` | <strong>Duration:</strong> ${event.duration}` : ''}
+                        </div>
+                      ` : ''}
+                      
+                      ${event.category === 'Cruise' && (event.cabinType || event.cabinNumber) ? `
+                        <div style="margin-bottom: 8px; font-size: 13px; color: #4b5563;">
+                          ${event.cabinType ? `<strong>Cabin Type:</strong> ${event.cabinType}` : ''}
+                          ${event.cabinNumber ? ` | <strong>Cabin Number:</strong> ${event.cabinNumber}` : ''}
+                        </div>
+                      ` : ''}
+                      
+                      <!-- Event Description (only if not a table) -->
+                      ${event.notes && !containsTable(event.notes) ? `
+                        <div style="margin-bottom: 12px;">
+                          <p style="font-size: 14px; color: #374151; margin: 0; line-height: 1.6; text-align: justify;">
+                            ${event.notes.replace(/<[^>]*>/g, '')}
+                          </p>
+                        </div>
+                      ` : ''}
+                      
+                      <!-- Event Images -->
+                      ${event.images && event.images.length > 0 ? createImageGrid(event.images, 4) : ''}
+                      
+                      <!-- Price Information -->
+                      ${event.amount ? `
+                        <div style="margin-top: 8px; font-size: 13px; color: #166534; font-weight: 600;">
+                          <strong>Cost:</strong> ${event.currency || 'USD'} ${event.amount.toLocaleString()}
+                          ${event.bookedThrough ? ` (Booked through: ${event.bookedThrough})` : ''}
+                        </div>
+                      ` : ''}
+                      
+                      <!-- Separator line -->
+                      <div style="border-bottom: 1px solid #e5e7eb; margin: 15px 0;"></div>
+                    </div>
+                  `).join('') || `
+                    <div style="text-align: center; padding: 40px; color: #6b7280;">
+                      <p style="font-size: 14px; margin: 0;">No specific activities planned for this day.</p>
+                    </div>
+                  `}
                 </div>
-              `}
-            </div>
+                
+                <!-- Day Page Footer -->
+                ${createFooter(currentPageNumber)}
+              </div>
+            `;
             
+            currentPageNumber++;
             
-            
-            <!-- Day Page Footer -->
-            ${createFooter(dayIndex + 2)}
-          </div>
-        `).join('')}
+            // Table Events Pages (separate page for each table)
+            tableEvents.forEach((event: any) => {
+              allPages += createTablePage(event, day.title, currentPageNumber);
+              currentPageNumber++;
+            });
+          });
+          
+          return allPages;
+        })()}
 
         <!-- Inclusions & Exclusions Page -->
         <div style="page-break-before: always; font-family: Arial, sans-serif; line-height: 1.4; color: #333; width: 210mm; padding: 20px; margin: 0; min-height: 297mm; background: white; position: relative; padding-bottom: 60px;">
@@ -584,7 +695,16 @@ export const usePDFGenerator = ({
           </div>
 
           <!-- Page Footer -->
-          ${createFooter(days.length + 2)}
+          ${createFooter((() => {
+            let totalPages = 2; // Cover + Summary pages
+            days.forEach((day: any) => {
+              totalPages++; // Regular day page
+              const tableEvents = day.events?.filter((event: any) => containsTable(event.notes)) || [];
+              totalPages += tableEvents.length; // Table pages
+            });
+            totalPages++; // Inclusions & Exclusions page
+            return totalPages;
+          })())}
         </div>
       </div>
     `;
