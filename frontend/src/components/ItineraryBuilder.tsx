@@ -1172,7 +1172,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                           {event.images.map((image, index) => (
                             <img
                               key={index}
-                              src={image.startsWith('http') ? image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${image}`}
+                              src={image.startsWith('http') ? image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/api/images/${image.split('/').pop()}`}
                               alt={`Event ${index + 1}`}
                               className="w-full h-24 object-cover rounded"
                             />
@@ -1449,7 +1449,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                                    {event.images.map((image: string, index: number) => (
                                      <img
                                        key={index}
-                                       src={image.startsWith('http') ? image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${image}`}
+                                       src={image.startsWith('http') ? image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/api/images/${image.split('/').pop()}`}
                                        alt={`Event ${index + 1}`}
                                        className="w-full h-24 object-cover rounded"
                                      />
@@ -1538,7 +1538,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                        {companyDetails.logo && (
                          <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                            <img 
-                             src={companyDetails.logo.startsWith('http') ? companyDetails.logo : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${companyDetails.logo}`} 
+                             src={companyDetails.logo.startsWith('http') ? companyDetails.logo : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/api/images/${companyDetails.logo.split('/').pop()}`} 
                              alt="Company Logo" 
                              className="w-full h-full object-contain"
                            />

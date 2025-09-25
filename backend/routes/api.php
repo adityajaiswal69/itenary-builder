@@ -39,3 +39,27 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Public shareable routes
 Route::get('/share/{shareUuid}', [\App\Http\Controllers\Api\ShareController::class, 'show']);
+
+// Public image serving route with CORS headers
+Route::get('/images/{filename}', function ($filename) {
+    $path = storage_path('app/public/images/' . $filename);
+
+    if (!file_exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Access-Control-Allow-Origin' => 'https://itenary.myaiplanet.com',
+        'Access-Control-Allow-Credentials' => 'true',
+    ]);
+});
+
+// Handle preflight OPTIONS requests for images
+Route::options('/images/{filename}', function () {
+    return response('', 200)
+        ->header('Access-Control-Allow-Origin', 'https://itenary.myaiplanet.com')
+        ->header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+        ->header('Access-Control-Allow-Credentials', 'true')
+        ->header('Access-Control-Max-Age', '86400');
+});

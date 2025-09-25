@@ -358,7 +358,7 @@ export const ItineraryViewer: React.FC = () => {
             {itinerary.user?.company_details?.logo ? (
               <div className="w-8 h-8 bg-white rounded border border-gray-200 flex items-center justify-center overflow-hidden">
                 <img 
-                  src={itinerary.user.company_details.logo.startsWith('http') ? itinerary.user.company_details.logo : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${itinerary.user.company_details.logo}`} 
+                  src={itinerary.user.company_details.logo.startsWith('http') ? itinerary.user.company_details.logo : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/api/images/${itinerary.user.company_details.logo.split('/').pop()}`} 
                   alt="Company Logo" 
                   className="w-full h-full object-contain"
                 />
@@ -393,7 +393,7 @@ export const ItineraryViewer: React.FC = () => {
           {itinerary.cover_image && (
             <div 
               className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-              style={{ backgroundImage: `url(${itinerary.cover_image.startsWith('http') ? itinerary.cover_image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${itinerary.cover_image}`})` }}
+              style={{ backgroundImage: `url(${itinerary.cover_image.startsWith('http') ? itinerary.cover_image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/api/images/${itinerary.cover_image.split('/').pop()}`})` }}
             />
           )}
           
@@ -407,7 +407,7 @@ export const ItineraryViewer: React.FC = () => {
               {itinerary.user?.company_details?.logo && (
                 <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center overflow-hidden">
                   <img 
-                    src={itinerary.user.company_details.logo.startsWith('http') ? itinerary.user.company_details.logo : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${itinerary.user.company_details.logo}`} 
+                    src={itinerary.user.company_details.logo.startsWith('http') ? itinerary.user.company_details.logo : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/api/images/${itinerary.user.company_details.logo.split('/').pop()}`} 
                     alt="Company Logo" 
                     className="w-full h-full object-contain"
                   />
@@ -500,7 +500,7 @@ export const ItineraryViewer: React.FC = () => {
                   {itinerary.user.company_details.logo && (
                     <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                       <img 
-                        src={itinerary.user.company_details.logo.startsWith('http') ? itinerary.user.company_details.logo : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${itinerary.user.company_details.logo}`} 
+                        src={itinerary.user.company_details.logo.startsWith('http') ? itinerary.user.company_details.logo : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/api/images/${itinerary.user.company_details.logo.split('/').pop()}`} 
                         alt="Company Logo" 
                         className="w-full h-full object-contain"
                       />
@@ -692,7 +692,7 @@ export const ItineraryViewer: React.FC = () => {
                                 onClick={() => openImageSlider(event.images, index, `${event.title} - ${day.title}`)}
                               >
                                 <img
-                                  src={image.startsWith('http') ? image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${image}`}
+                                  src={image.startsWith('http') ? image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/api/images/${image.split('/').pop()}`}
                                   alt={`Event ${index + 1}`}
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
@@ -842,7 +842,7 @@ export const ItineraryViewer: React.FC = () => {
             {/* Image */}
             <div className="max-w-4xl max-h-full p-4">
               <img
-                src={imageSlider.images[imageSlider.currentIndex].startsWith('http') ? imageSlider.images[imageSlider.currentIndex] : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${imageSlider.images[imageSlider.currentIndex]}`}
+                src={imageSlider.images[imageSlider.currentIndex].startsWith('http') ? imageSlider.images[imageSlider.currentIndex] : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/api/images/${imageSlider.images[imageSlider.currentIndex].split('/').pop()}`}
                 alt={`Image ${imageSlider.currentIndex + 1}`}
                 className="max-w-full max-h-full object-contain"
               />

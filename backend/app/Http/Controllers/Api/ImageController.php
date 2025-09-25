@@ -32,7 +32,7 @@ class ImageController extends Controller
             return response()->json([
                 'success' => true,
                 'filename' => $filename,
-                'path' => url(Storage::url($path)),
+                'path' => url('/api/images/' . $filename),
                 'original_name' => $originalName,
                 'size' => $file->getSize(),
             ]);
@@ -70,7 +70,7 @@ class ImageController extends Controller
                 
                 $uploadedImages[] = [
                     'filename' => $filename,
-                    'path' => url(Storage::url($path)),
+                    'path' => url('/api/images/' . $filename),
                     'original_name' => $originalName,
                     'size' => $file->getSize(),
                 ];

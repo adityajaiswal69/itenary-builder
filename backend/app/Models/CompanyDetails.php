@@ -25,6 +25,29 @@ class CompanyDetails extends Model
         'description',
     ];
 
+    /**
+     * Convert storage URLs to API image URLs for logo
+     */
+    public function getLogoAttribute($value)
+    {
+        if (!$value) {
+            return $value;
+        }
+        
+        // If it's already an API URL or external URL, return as is
+        if (str_contains($value, '/api/images/') || str_starts_with($value, 'http')) {
+            return $value;
+        }
+        
+        // Convert storage URL to API URL
+        if (str_contains($value, '/storage/images/')) {
+            $filename = basename($value);
+            return url('/api/images/' . $filename);
+        }
+        
+        return $value;
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

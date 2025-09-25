@@ -15,14 +15,16 @@ export const getCorsEnabledImageUrl = (imagePath: string): string => {
     return imagePath;
   }
   
-  // If it's a storage path, use the original endpoint (CORS will be handled by middleware)
+  // If it's a storage path, convert to new /api/images/ route
   if (imagePath.startsWith('/storage/')) {
-    return `${BACKEND_URL}${imagePath}`;
+    // Extract filename from storage path
+    const filename = imagePath.split('/').pop();
+    return `${BACKEND_URL}/api/images/${filename}`;
   }
   
-  // If it's just a filename, assume it's in storage/images
+  // If it's just a filename, use the new /api/images/ route
   if (!imagePath.startsWith('/')) {
-    return `${BACKEND_URL}/storage/images/${imagePath}`;
+    return `${BACKEND_URL}/api/images/${imagePath}`;
   }
   
   // Default case - prepend backend URL
