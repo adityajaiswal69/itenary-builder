@@ -13,147 +13,6 @@ export const PDFPreview: React.FC<PDFPreviewProps> = ({ itinerary, currentPackag
   const [previewContent, setPreviewContent] = useState<string>('');
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Helper function to convert image to base64 using multiple strategies
-  const convertImageToBase64 = async (imageSrc: string): Promise<string> => {
-    try {
-      // If it's already a data URL, return as is
-      if (imageSrc.startsWith('data:')) {
-        return imageSrc;
-      }
-      
-      console.log(`Converting image: ${imageSrc}`);
-      
-      // Strategy 1: Try direct fetch with no-cors mode (bypasses CORS)
-      try {
-        const response = await fetch(imageSrc, {
-          mode: 'no-cors',
-          cache: 'no-cache'
-        });
-        
-        if (response.type === 'opaque') {
-          // Opaque response means it loaded but we can't read it directly
-          // This is actually good - it means the image loaded successfully
-          console.log(`Image loaded via no-cors: ${imageSrc.substring(imageSrc.lastIndexOf('/') + 1)}`);
-          
-          // Create a new image element to load the image
-          return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            
-            img.onload = () => {
-              try {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                if (!ctx) {
-                  resolve(createImagePlaceholder());
-                  return;
-                }
-                
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                ctx.drawImage(img, 0, 0);
-                
-                const dataURL = canvas.toDataURL('image/jpeg', 0.9);
-                console.log(`Successfully converted image via canvas: ${imageSrc.substring(imageSrc.lastIndexOf('/') + 1)}`);
-                resolve(dataURL);
-              } catch (canvasError) {
-                console.warn('Canvas conversion failed:', canvasError);
-                resolve(createImagePlaceholder());
-              }
-            };
-            
-            img.onerror = () => {
-              console.warn('Image load failed in no-cors mode');
-              resolve(createImagePlaceholder());
-            };
-            
-            img.src = imageSrc;
-          });
-        }
-      } catch (noCorsError) {
-        console.warn('No-cors fetch failed:', noCorsError);
-      }
-      
-      // Strategy 2: Try with CORS mode
-      try {
-        const response = await fetch(imageSrc, {
-          mode: 'cors',
-          credentials: 'omit',
-          headers: {
-            'Accept': 'image/*',
-          },
-        });
-        
-        if (response.ok) {
-          const blob = await response.blob();
-          
-          return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const dataURL = reader.result as string;
-              console.log(`Successfully converted image via CORS fetch: ${imageSrc.substring(imageSrc.lastIndexOf('/') + 1)}`);
-              resolve(dataURL);
-            };
-            reader.onerror = () => {
-              console.warn('Failed to convert blob to base64:', imageSrc);
-              resolve(createImagePlaceholder());
-            };
-            reader.readAsDataURL(blob);
-          });
-        }
-      } catch (corsError) {
-        console.warn('CORS fetch failed:', corsError);
-      }
-      
-      // Strategy 3: Direct image loading with anonymous crossOrigin
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        const timeout = setTimeout(() => {
-          console.warn(`Image load timeout for: ${imageSrc}`);
-          resolve(createImagePlaceholder());
-        }, 15000);
-        
-        img.onload = () => {
-          clearTimeout(timeout);
-          try {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            if (!ctx) {
-              resolve(createImagePlaceholder());
-              return;
-            }
-            
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-            ctx.drawImage(img, 0, 0);
-            
-            const dataURL = canvas.toDataURL('image/jpeg', 0.9);
-            console.log(`Successfully converted image via direct loading: ${imageSrc.substring(imageSrc.lastIndexOf('/') + 1)}`);
-            resolve(dataURL);
-          } catch (canvasError) {
-            console.warn('Canvas conversion failed in direct loading:', canvasError);
-            resolve(createImagePlaceholder());
-          }
-        };
-        
-        img.onerror = () => {
-          clearTimeout(timeout);
-          console.warn(`Image load failed for: ${imageSrc}`);
-          resolve(createImagePlaceholder());
-        };
-        
-        img.src = imageSrc;
-      });
-      
-    } catch (error) {
-      console.warn('Image conversion failed:', imageSrc, error);
-      return createImagePlaceholder();
-    }
-  };
 
   // Helper function to create a better image placeholder
   const createImagePlaceholder = () => {
@@ -428,14 +287,59 @@ export const PDFPreview: React.FC<PDFPreviewProps> = ({ itinerary, currentPackag
     `;
   };
 
-  // Load and convert all images
+  // Load and convert all images from already loaded page elements
   const loadImages = async () => {
     if (!itinerary) return;
 
     setLoadingImages(true);
     setImageErrors([]);
 
-    // Collect all images from the itinerary
+    console.log('Collecting images from already loaded page elements...');
+    
+    // Function to convert loaded image to base64
+    const convertLoadedImageToBase64 = (img: HTMLImageElement): string => {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          console.warn('Could not get canvas context');
+          return createImagePlaceholder();
+        }
+        
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        
+        ctx.drawImage(img, 0, 0);
+        return canvas.toDataURL('image/jpeg', 0.9);
+      } catch (error) {
+        console.warn('Failed to convert loaded image to base64:', error);
+        return createImagePlaceholder();
+      }
+    };
+
+    // Convert all images to base64 from page elements
+    const newImageBase64Map = new Map<string, string>();
+    const errors: string[] = [];
+
+    // Collect images from the current page
+    const pageImages = document.querySelectorAll('img');
+    console.log(`Found ${pageImages.length} images on the page`);
+    
+    pageImages.forEach((img, index) => {
+      if (img.complete && img.naturalWidth > 0 && img.src) {
+        // Skip data URLs and placeholder images
+        if (!img.src.startsWith('data:') && !img.src.includes('placeholder')) {
+          const base64 = convertLoadedImageToBase64(img);
+          const imageKey = img.src.substring(img.src.lastIndexOf('/') + 1);
+          newImageBase64Map.set(imageKey, base64);
+          newImageBase64Map.set(img.src, base64); // Also map by full URL
+          console.log(`Converted loaded image ${index + 1}: ${imageKey}`);
+        }
+      }
+    });
+
+    // Also collect images from itinerary data for reference
     const allImages: string[] = [];
     const days = itinerary.content?.days || [];
     
@@ -455,30 +359,8 @@ export const PDFPreview: React.FC<PDFPreviewProps> = ({ itinerary, currentPackag
       }
     });
 
-    console.log(`Found ${allImages.length} images to process`);
-
-    // Convert all images to base64
-    const newImageBase64Map = new Map<string, string>();
-    const errors: string[] = [];
-
-    if (allImages.length > 0) {
-      console.log('Converting images to base64...');
-      const imagePromises = allImages.map(async (imageSrc) => {
-        try {
-          const base64 = await convertImageToBase64(imageSrc);
-          newImageBase64Map.set(imageSrc, base64);
-          console.log(`Converted image: ${imageSrc.substring(imageSrc.lastIndexOf('/') + 1)}`);
-        } catch (error) {
-          console.warn(`Failed to convert image: ${imageSrc}`, error);
-          errors.push(imageSrc);
-          // Use placeholder
-          newImageBase64Map.set(imageSrc, createImagePlaceholder());
-        }
-      });
-
-      await Promise.all(imagePromises);
-      console.log('All images processed');
-    }
+    console.log(`Found ${allImages.length} images in itinerary data`);
+    console.log(`Converted ${newImageBase64Map.size} images from page elements`);
 
     setImageBase64Map(newImageBase64Map);
     setImageErrors(errors);
