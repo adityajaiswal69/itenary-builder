@@ -41,10 +41,17 @@ Route::get('/storage/{path}', function (Request $request, $path) {
         ->header('Content-Length', strlen($fileContent));
     
     // Add CORS headers directly
-    if ($origin === 'http://localhost:5173' || $origin === 'http://127.0.0.1:5173') {
+    $allowedOrigins = [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'https://itenary.myaiplanet.com',
+        'https://itenaryapi.myaiplanet.com'
+    ];
+    
+    if (in_array($origin, $allowedOrigins)) {
         $response->header('Access-Control-Allow-Origin', $origin);
     } else {
-        $response->header('Access-Control-Allow-Origin', 'http://localhost:5173');
+        $response->header('Access-Control-Allow-Origin', 'https://itenary.myaiplanet.com');
     }
     
     $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -61,10 +68,17 @@ Route::options('/storage/{path}', function (Request $request, $path) {
     
     $response = response('', 200);
     
-    if ($origin === 'http://localhost:5173' || $origin === 'http://127.0.0.1:5173') {
+    $allowedOrigins = [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'https://itenary.myaiplanet.com',
+        'https://itenaryapi.myaiplanet.com'
+    ];
+    
+    if (in_array($origin, $allowedOrigins)) {
         $response->header('Access-Control-Allow-Origin', $origin);
     } else {
-        $response->header('Access-Control-Allow-Origin', 'http://localhost:5173');
+        $response->header('Access-Control-Allow-Origin', 'https://itenary.myaiplanet.com');
     }
     
     $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');

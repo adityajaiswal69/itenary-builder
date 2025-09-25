@@ -36,7 +36,9 @@ class ImageServeController extends Controller
             env('FRONTEND_URL', 'http://localhost:5173'),
             env('FRONTEND_URL_ALT', 'http://127.0.0.1:5173'),
             'http://localhost:5173',
-            'http://127.0.0.1:5173'
+            'http://127.0.0.1:5173',
+            'https://itenary.myaiplanet.com',
+            'https://itenaryapi.myaiplanet.com'
         ];
         
         // Create response with proper headers
@@ -49,7 +51,7 @@ class ImageServeController extends Controller
         if (in_array($origin, $allowedOrigins)) {
             $response->header('Access-Control-Allow-Origin', $origin);
         } else {
-            $response->header('Access-Control-Allow-Origin', 'http://localhost:5173');
+            $response->header('Access-Control-Allow-Origin', 'https://itenary.myaiplanet.com');
         }
         
         $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -71,7 +73,9 @@ class ImageServeController extends Controller
             env('FRONTEND_URL', 'http://localhost:5173'),
             env('FRONTEND_URL_ALT', 'http://127.0.0.1:5173'),
             'http://localhost:5173',
-            'http://127.0.0.1:5173'
+            'http://127.0.0.1:5173',
+            'https://itenary.myaiplanet.com',
+            'https://itenaryapi.myaiplanet.com'
         ];
         
         $response = response('', 200);
@@ -79,7 +83,7 @@ class ImageServeController extends Controller
         if (in_array($origin, $allowedOrigins)) {
             $response->header('Access-Control-Allow-Origin', $origin);
         } else {
-            $response->header('Access-Control-Allow-Origin', 'http://localhost:5173');
+            $response->header('Access-Control-Allow-Origin', 'https://itenary.myaiplanet.com');
         }
         
         $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');

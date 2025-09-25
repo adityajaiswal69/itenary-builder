@@ -465,8 +465,8 @@ export const usePDFGenerator = ({
               <h4 style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0; color: #dc2626;">For more info:</h4>
               <div style="font-size: 12px; color: #1e40af; line-height: 1.5;">
                 ${companyDetails?.website ? `<div style="margin-bottom: 3px;"><strong>Website:</strong> <a href="${companyDetails.website}" target="_blank" style="color: #1e40af; text-decoration: underline;">${companyDetails.website}</a></div>` : ''}
-                <div style="margin-bottom: 3px;"><strong>Email:</strong> ${companyDetails?.email || user?.email || 'info@company.com'}</div>
-                <div style="margin-bottom: 3px;"><strong>Phone:</strong> ${companyDetails?.phone || user?.phone || 'Contact Number'}</div>
+                <div style="margin-bottom: 3px;"><strong>Email:</strong> <a href="mailto:${companyDetails?.email || user?.email || 'info@company.com'}" style="color: #1e40af; text-decoration: underline;">${companyDetails?.email || user?.email || 'info@company.com'}</a></div>
+                <div style="margin-bottom: 3px;"><strong>Phone:</strong> <a href="tel:${companyDetails?.phone || user?.phone || 'Contact Number'}" style="color: #1e40af; text-decoration: underline;">${companyDetails?.phone || user?.phone || 'Contact Number'}</a></div>
                 ${companyDetails?.address ? `<div style="margin-bottom: 3px;"><strong>Address:</strong> ${companyDetails.address}</div>` : ''}
               </div>
               
@@ -474,8 +474,8 @@ export const usePDFGenerator = ({
               <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #cbd5e1;">
                 <div style="font-size: 12px; color: #374151; line-height: 1.5;">
                   <div style="font-weight: bold; margin-bottom: 5px;">Regards (For any enquiries, please feel free to call us):</div>
-                  <div style="margin-bottom: 3px;"><strong>${companyDetails?.company_name || 'Company Name'}</strong> - ${companyDetails?.phone || user?.phone || 'Contact Number'}</div>
-                  <div><strong>Office</strong> - ${companyDetails?.phone || user?.phone || 'Contact Number'}</div>
+                  <div style="margin-bottom: 3px;"><strong>${companyDetails?.company_name || 'Company Name'}</strong> - <a href="tel:${companyDetails?.phone || user?.phone || 'Contact Number'}" style="color: #1e40af; text-decoration: underline;">${companyDetails?.phone || user?.phone || 'Contact Number'}</a></div>
+                  <div><strong>Office</strong> - <a href="tel:${companyDetails?.phone || user?.phone || 'Contact Number'}" style="color: #1e40af; text-decoration: underline;">${companyDetails?.phone || user?.phone || 'Contact Number'}</a></div>
                 </div>
               </div>
             </div>
@@ -675,8 +675,8 @@ export const usePDFGenerator = ({
             <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 10px 0; color: #1f2937;">${companyDetails?.company_name || 'Company Name'}</h3>
             <div style="font-size: 12px; color: #4b5563; line-height: 1.5;">
               ${companyDetails?.website ? `<div style="margin-bottom: 3px;"><strong>Website:</strong> <a href="${companyDetails.website}" target="_blank" style="color: #1e40af; text-decoration: underline;">${companyDetails.website}</a></div>` : ''}
-              <div style="margin-bottom: 3px;"><strong>Email:</strong> ${companyDetails?.email || user?.email || 'info@company.com'}</div>
-              <div style="margin-bottom: 3px;"><strong>Phone:</strong> ${companyDetails?.phone || user?.phone || 'Contact Number'}</div>
+              <div style="margin-bottom: 3px;"><strong>Email:</strong> <a href="mailto:${companyDetails?.email || user?.email || 'info@company.com'}" style="color: #1e40af; text-decoration: underline;">${companyDetails?.email || user?.email || 'info@company.com'}</a></div>
+              <div style="margin-bottom: 3px;"><strong>Phone:</strong> <a href="tel:${companyDetails?.phone || user?.phone || 'Contact Number'}" style="color: #1e40af; text-decoration: underline;">${companyDetails?.phone || user?.phone || 'Contact Number'}</a></div>
               ${companyDetails?.address ? `<div style="margin-bottom: 3px;"><strong>Address:</strong> ${companyDetails.address}</div>` : ''}
               
               <!-- Social Media Links -->
@@ -710,12 +710,280 @@ export const usePDFGenerator = ({
     `;
   };
 
-  // Helper function to add clickable links to PDF using textWithLink
-  // Note: All links are now handled by HTML <a> tags in the content
-  const addClickableLinksToPDF = (_pdf: jsPDF, _itinerary: Itinerary) => {
-    // All links are now handled by HTML <a> tags in the generated content
-    // No PDF overlay links needed
-    return;
+  // Helper function to detect and add clickable links to PDF
+  const addClickableLinksToPDF = async (pdf: jsPDF, pdfContainer: HTMLElement, canvas: HTMLCanvasElement, totalPages: number) => {
+    try {
+      // Find all <a> elements in the PDF container
+      const linkElements = pdfContainer.querySelectorAll('a[href]');
+      console.log(`🔍 Found ${linkElements.length} clickable links to process`);
+      
+      if (linkElements.length === 0) {
+        console.log('❌ No links found in PDF container');
+        return;
+      }
+
+      // Debug: Log all links in order of detection
+      console.log('🔍 All detected links in order:');
+      linkElements.forEach((linkElement, index) => {
+        const href = linkElement.getAttribute('href');
+        const text = (linkElement as HTMLElement).textContent || '';
+        const rect = linkElement.getBoundingClientRect();
+        console.log(`  ${index + 1}. "${text}" -> ${href} at (${rect.left.toFixed(1)}, ${rect.top.toFixed(1)})`);
+      });
+
+      // Wait a bit to ensure everything is rendered
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Get container dimensions
+      const containerWidth = pdfContainer.offsetWidth;
+      const containerHeight = pdfContainer.offsetHeight;
+      console.log('📏 Container dimensions:', { width: containerWidth, height: containerHeight });
+      console.log('📏 Canvas dimensions:', { width: canvas.width, height: canvas.height });
+      
+      // PDF dimensions in mm
+      const pdfWidth = 210; // A4 width
+      const pageHeight = 297; // A4 height
+      
+      // Calculate the total content height in PDF units
+      const totalContentHeight = (canvas.height * pdfWidth) / canvas.width;
+      console.log('📏 Total content height in PDF:', totalContentHeight);
+      
+      // Calculate scale factors
+      const scaleX = canvas.width / containerWidth;
+      const scaleY = canvas.height / containerHeight;
+      console.log('📐 Scale factors:', { scaleX, scaleY });
+
+      // First, add a simple test link to verify jsPDF functionality
+      try {
+        pdf.setPage(1);
+        pdf.link(10, 10, 50, 10, { url: 'https://www.google.com' });
+        console.log('🧪 Test link added to page 1 at (10, 10)');
+        
+        // Add another test link at a different position
+        pdf.link(10, 30, 50, 10, { url: 'https://www.github.com' });
+        console.log('🧪 Test link 2 added to page 1 at (10, 30)');
+      } catch (testError) {
+        console.error('❌ Test link failed:', testError);
+      }
+
+      // Store link positions to check for overlaps
+      const linkPositions: Array<{x: number, y: number, width: number, height: number, href: string, text: string}> = [];
+      
+      // Process each link with better debugging
+      for (let index = 0; index < linkElements.length; index++) {
+        const linkElement = linkElements[index];
+        try {
+          const href = linkElement.getAttribute('href');
+          const linkText = (linkElement as HTMLElement).textContent || '';
+          
+          if (!href) {
+            console.warn(`⚠️ Link ${index + 1} has no href attribute`);
+            continue;
+          }
+          
+          console.log(`🔗 Processing Link ${index + 1}:`, {
+            href: href,
+            text: linkText,
+            element: linkElement
+          });
+          
+          // Add a temporary visual indicator to help debug
+          (linkElement as HTMLElement).style.border = '2px solid red';
+          (linkElement as HTMLElement).style.backgroundColor = 'yellow';
+          (linkElement as HTMLElement).setAttribute('data-link-index', (index + 1).toString());
+
+          // Get the link's position using offset measurements
+          let element = linkElement as HTMLElement;
+          let relativeX = 0;
+          let relativeY = 0;
+          
+          // Calculate position relative to the container
+          while (element && element !== pdfContainer) {
+            relativeX += element.offsetLeft;
+            relativeY += element.offsetTop;
+            element = element.offsetParent as HTMLElement;
+          }
+          
+          const relativeWidth = (linkElement as HTMLElement).offsetWidth;
+          const relativeHeight = (linkElement as HTMLElement).offsetHeight;
+          
+          console.log(`🔗 Link ${index + 1} (${href}):`, {
+            relativeX: relativeX.toFixed(2),
+            relativeY: relativeY.toFixed(2),
+            relativeWidth: relativeWidth.toFixed(2),
+            relativeHeight: relativeHeight.toFixed(2)
+          });
+          
+          // Convert to canvas coordinates
+          const canvasX = relativeX * scaleX;
+          const canvasY = relativeY * scaleY;
+          const canvasWidth = relativeWidth * scaleX;
+          const canvasHeight = relativeHeight * scaleY;
+          
+          console.log(`🎨 Canvas coords:`, {
+            x: canvasX.toFixed(2),
+            y: canvasY.toFixed(2),
+            width: canvasWidth.toFixed(2),
+            height: canvasHeight.toFixed(2)
+          });
+          
+          // Convert to PDF coordinates (in mm)
+          const pdfX = (canvasX / canvas.width) * pdfWidth;
+          const pdfY = (canvasY / canvas.height) * totalContentHeight;
+          const pdfWidth_mm = (canvasWidth / canvas.width) * pdfWidth;
+          const pdfHeight_mm = (canvasHeight / canvas.height) * totalContentHeight;
+          
+          // Debug: Check for potential coordinate issues
+          if (pdfX < 0 || pdfY < 0 || pdfX > pdfWidth || pdfY > totalContentHeight) {
+            console.warn(`⚠️ Link ${index + 1} has suspicious coordinates:`, {
+              pdfX: pdfX.toFixed(2),
+              pdfY: pdfY.toFixed(2),
+              pdfWidth: pdfWidth,
+              totalContentHeight: totalContentHeight
+            });
+          }
+          
+          console.log(`📄 PDF coords:`, {
+            x: pdfX.toFixed(2),
+            y: pdfY.toFixed(2),
+            width: pdfWidth_mm.toFixed(2),
+            height: pdfHeight_mm.toFixed(2)
+          });
+          
+          // Determine which page this link belongs to
+          const pageNumber = Math.floor(pdfY / pageHeight);
+          console.log(`📖 Link belongs to page: ${pageNumber + 1} (total pages: ${totalPages})`);
+          
+          if (pageNumber >= 0 && pageNumber < totalPages) {
+            // Calculate position within the page
+            const pageY = pdfY - (pageNumber * pageHeight);
+            
+            // Add the link to the specific page
+            // Note: jsPDF link coordinates are from bottom-left, so we need to adjust
+            const adjustedY = pageHeight - pageY - pdfHeight_mm;
+            
+            console.log(`🎯 Final position:`, {
+              page: pageNumber + 1,
+              x: pdfX.toFixed(2),
+              y: adjustedY.toFixed(2),
+              width: pdfWidth_mm.toFixed(2),
+              height: pdfHeight_mm.toFixed(2)
+            });
+            
+            // Set the page context and add the link
+            pdf.setPage(pageNumber + 1);
+            
+            // Ensure minimum size for clickability
+            const minWidth = Math.max(pdfWidth_mm, 10);
+            const minHeight = Math.max(pdfHeight_mm, 5);
+            
+            // Check for overlapping links
+            const currentPosition = { x: pdfX, y: adjustedY, width: minWidth, height: minHeight, href, text: linkText };
+            const overlappingLinks = linkPositions.filter(pos => {
+              const overlap = !(currentPosition.x + currentPosition.width < pos.x || 
+                              pos.x + pos.width < currentPosition.x || 
+                              currentPosition.y + currentPosition.height < pos.y || 
+                              pos.y + pos.height < currentPosition.y);
+              return overlap;
+            });
+            
+            if (overlappingLinks.length > 0) {
+              console.warn(`⚠️ Link ${index + 1} overlaps with existing links:`, overlappingLinks);
+            }
+            
+            // Store this link position
+            linkPositions.push(currentPosition);
+            
+            // Try to add the link using different methods
+            let linkAdded = false;
+            
+            console.log(`🎯 Adding link ${index + 1} at position:`, {
+              page: pageNumber + 1,
+              x: pdfX.toFixed(2),
+              y: adjustedY.toFixed(2),
+              width: minWidth.toFixed(2),
+              height: minHeight.toFixed(2),
+              href: href,
+              text: linkText,
+              originalPosition: {
+                relativeX: relativeX.toFixed(2),
+                relativeY: relativeY.toFixed(2),
+                relativeWidth: relativeWidth.toFixed(2),
+                relativeHeight: relativeHeight.toFixed(2)
+              },
+              overlaps: overlappingLinks.length
+            });
+            
+            // Method 1: Try standard link method
+            try {
+              pdf.link(pdfX, adjustedY, minWidth, minHeight, { url: href });
+              console.log(`✅ Method 1: Added link ${index + 1} (${linkText}) -> ${href} on page ${pageNumber + 1}`);
+              linkAdded = true;
+            } catch (linkError) {
+              console.warn(`⚠️ Method 1 failed for link ${index + 1}:`, linkError);
+            }
+            
+            // Method 2: Try textWithLink method
+            if (!linkAdded) {
+              try {
+                pdf.textWithLink(linkText, pdfX, adjustedY, { url: href });
+                console.log(`✅ Method 2: Added link ${index + 1} (${linkText}) -> ${href} on page ${pageNumber + 1}`);
+                linkAdded = true;
+              } catch (textLinkError) {
+                console.warn(`⚠️ Method 2 failed for link ${index + 1}:`, textLinkError);
+              }
+            }
+            
+            // Method 3: Try with different coordinate system
+            if (!linkAdded) {
+              try {
+                // Try with top-left coordinate system
+                pdf.link(pdfX, pageY, minWidth, minHeight, { url: href });
+                console.log(`✅ Method 3: Added link ${index + 1} (${linkText}) -> ${href} on page ${pageNumber + 1}`);
+                linkAdded = true;
+              } catch (coordError) {
+                console.warn(`⚠️ Method 3 failed for link ${index + 1}:`, coordError);
+              }
+            }
+            
+            if (!linkAdded) {
+              console.error(`❌ All methods failed for link ${index + 1}: ${href}`);
+            }
+          } else {
+            console.warn(`❌ Link ${index + 1} (${href}) is outside page bounds: page ${pageNumber + 1}`);
+          }
+          
+        } catch (linkError) {
+          console.error(`❌ Failed to process link ${index + 1}:`, linkError);
+        }
+      }
+      
+      console.log(`🎉 Successfully processed ${linkElements.length} clickable links`);
+      
+      // Summary of all processed links
+      console.log('📋 Link Processing Summary:');
+      linkElements.forEach((linkElement, index) => {
+        const href = linkElement.getAttribute('href');
+        const text = (linkElement as HTMLElement).textContent || '';
+        console.log(`  ${index + 1}. "${text}" -> ${href}`);
+      });
+      
+      // Summary of all link positions
+      console.log('📍 Link Positions Summary:');
+      linkPositions.forEach((pos, index) => {
+        console.log(`  ${index + 1}. "${pos.text}" -> ${pos.href} at (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}) size (${pos.width.toFixed(2)}, ${pos.height.toFixed(2)})`);
+      });
+      
+      // Clean up visual indicators
+      linkElements.forEach((linkElement) => {
+        (linkElement as HTMLElement).style.border = '';
+        (linkElement as HTMLElement).style.backgroundColor = '';
+        (linkElement as HTMLElement).removeAttribute('data-link-index');
+      });
+      
+    } catch (error) {
+      console.error('❌ Error adding clickable links to PDF:', error);
+    }
   };
 
   const downloadPDF = async () => {
@@ -788,9 +1056,12 @@ export const usePDFGenerator = ({
       pdfContainer.innerHTML = pdfContent;
       document.body.appendChild(pdfContainer);
 
-      // Wait for images to load properly
+      // Wait for images to load properly and ensure container is fully rendered
       console.log('Waiting for images to load...');
       await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Force a reflow to ensure all elements are properly positioned
+      pdfContainer.offsetHeight;
 
       // Preload all images to ensure they're ready
       const imageElements = pdfContainer.querySelectorAll('img');
@@ -866,6 +1137,9 @@ export const usePDFGenerator = ({
       const totalPages = Math.ceil(imgHeight / pageHeight);
       console.log(`Total content height: ${imgHeight}mm, Page height: ${pageHeight}mm, Total pages: ${totalPages}`);
       
+      // Add clickable links to the PDF BEFORE adding images
+      await addClickableLinksToPDF(pdf, pdfContainer, canvas, totalPages);
+      
       // Add pages with proper positioning
       for (let i = 0; i < totalPages; i++) {
         if (i > 0) {
@@ -879,9 +1153,16 @@ export const usePDFGenerator = ({
         // Add the image for this page
         pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, yPosition, imgWidth, imgHeight);
       }
-
-      // Add clickable links to the PDF
-      addClickableLinksToPDF(pdf, itinerary);
+      
+      // Debug: Check if links were actually added to the PDF
+      console.log('🔍 PDF internal structure check:');
+      try {
+        const pdfOutput = pdf.output('datauristring');
+        const linkCount = (pdfOutput.match(/\/Annots/g) || []).length;
+        console.log(`📊 PDF contains ${linkCount} annotations (links)`);
+      } catch (debugError) {
+        console.warn('⚠️ Could not check PDF internal structure:', debugError);
+      }
 
       // Download PDF
       const fileName = `${itinerary.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_itinerary.pdf`;
