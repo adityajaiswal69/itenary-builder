@@ -3,6 +3,8 @@ import html2canvas from 'html2canvas';
 import type { Itinerary } from '../services/api';
 import { getCorsEnabledImageUrl } from '../lib/imageUtils';
 
+const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000';
+
 interface PDFGeneratorProps {
   itinerary: Itinerary;
   currentPackage?: any;
@@ -53,6 +55,8 @@ export const usePDFGenerator = ({
             };
             reader.readAsDataURL(blob);
           });
+        } else {
+          console.warn(`CORS fetch failed with status ${response.status}: ${imageSrc}`);
         }
       } catch (corsError) {
         console.warn('CORS fetch failed:', corsError);
@@ -70,47 +74,66 @@ export const usePDFGenerator = ({
           // This is actually good - it means the image loaded successfully
           console.log(`Image loaded via no-cors: ${imageSrc.substring(imageSrc.lastIndexOf('/') + 1)}`);
           
-          // Create a new image element to load the image
-          return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            
-            img.onload = () => {
-              try {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                if (!ctx) {
-                  resolve(createImagePlaceholder());
-                  return;
-                }
-                
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                ctx.drawImage(img, 0, 0);
-                
-                const dataURL = canvas.toDataURL('image/jpeg', 0.9);
-                console.log(`Successfully converted image via canvas: ${imageSrc.substring(imageSrc.lastIndexOf('/') + 1)}`);
-                resolve(dataURL);
-              } catch (canvasError) {
-                console.warn('Canvas conversion failed:', canvasError);
-                resolve(createImagePlaceholder());
-              }
-            };
-            
-            img.onerror = () => {
-              console.warn('Image load failed in no-cors mode');
-              resolve(createImagePlaceholder());
-            };
-            
-            img.src = corsEnabledUrl;
-          });
+          // For no-cors images, we need to use a different approach
+          // Since we can't access the image data due to CORS, we'll use the original URL
+          // and let html2canvas handle it
+          console.log(`Using original URL for no-cors image: ${imageSrc.substring(imageSrc.lastIndexOf('/') + 1)}`);
+          return corsEnabledUrl; // Return the original URL instead of base64
         }
       } catch (noCorsError) {
         console.warn('No-cors fetch failed:', noCorsError);
       }
       
-      // Strategy 3: Direct image loading with anonymous crossOrigin
+      // Strategy 3: Try alternative URL formats
+      const alternativeUrls = [];
+      
+      // If the original URL contains /storage/images/, try the /api/images/ version
+      if (imageSrc.includes('/storage/images/')) {
+        const filename = imageSrc.split('/').pop();
+        alternativeUrls.push(`${BACKEND_URL}/api/images/${filename}`);
+      }
+      
+      // If the original URL contains /api/images/, try the /storage/images/ version
+      if (imageSrc.includes('/api/images/')) {
+        const filename = imageSrc.split('/').pop();
+        alternativeUrls.push(`${BACKEND_URL}/storage/images/${filename}`);
+      }
+      
+      // Try alternative URLs
+      for (const altUrl of alternativeUrls) {
+        try {
+          console.log(`Trying alternative URL: ${altUrl}`);
+          const response = await fetch(altUrl, {
+            mode: 'cors',
+            credentials: 'omit',
+            headers: {
+              'Accept': 'image/*',
+            },
+          });
+          
+          if (response.ok) {
+            const blob = await response.blob();
+            
+            return new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const dataURL = reader.result as string;
+                console.log(`Successfully converted image via alternative URL: ${imageSrc.substring(imageSrc.lastIndexOf('/') + 1)}`);
+                resolve(dataURL);
+              };
+              reader.onerror = () => {
+                console.warn('Failed to convert blob to base64:', imageSrc);
+                resolve(createImagePlaceholder());
+              };
+              reader.readAsDataURL(blob);
+            });
+          }
+        } catch (altError) {
+          console.warn('Alternative URL failed:', altError);
+        }
+      }
+      
+      // Strategy 4: Direct image loading with anonymous crossOrigin
       return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -158,6 +181,7 @@ export const usePDFGenerator = ({
       return createImagePlaceholder();
     }
   };
+
 
   // Helper function to create a better image placeholder
   const createImagePlaceholder = () => {
@@ -250,6 +274,13 @@ export const usePDFGenerator = ({
       
       const displayImages = images.slice(0, maxImages);
       const remainingCount = images.length - maxImages;
+      
+      // Debug: Log image processing
+      console.log('Creating image grid for images:', displayImages);
+      displayImages.forEach((img, index) => {
+        const base64 = imageBase64Map.get(img);
+        console.log(`Image ${index + 1}: ${img.substring(img.lastIndexOf('/') + 1)} -> ${base64 ? 'HAS_BASE64' : 'NO_BASE64'}`);
+      });
       
       if (displayImages.length === 1) {
         return `
@@ -731,11 +762,13 @@ export const usePDFGenerator = ({
       // Collect images from cover image
       if (itinerary.cover_image) {
         allImages.push(itinerary.cover_image);
+        console.log('Cover image:', itinerary.cover_image);
       }
       
       // Collect company logo
       if (itinerary.user?.company_details?.logo) {
         allImages.push(itinerary.user.company_details.logo);
+        console.log('Company logo:', itinerary.user.company_details.logo);
       }
       
       // Collect images from events
@@ -744,12 +777,13 @@ export const usePDFGenerator = ({
           day.events.forEach((event: any) => {
             if (event.images && event.images.length > 0) {
               allImages.push(...event.images);
+              console.log('Event images:', event.images);
             }
           });
         }
       });
 
-      console.log(`Found ${allImages.length} images to process`);
+      console.log(`Found ${allImages.length} images to process:`, allImages);
 
       // Convert all images to base64
       const imageBase64Map = new Map<string, string>();
@@ -769,7 +803,20 @@ export const usePDFGenerator = ({
 
         await Promise.all(imagePromises);
         console.log('All images converted to base64');
+        
+        // Log conversion results
+        console.log('Image conversion results:');
+        imageBase64Map.forEach((base64, originalUrl) => {
+          const isPlaceholder = base64.includes('data:image/svg+xml');
+          console.log(`  ${originalUrl}: ${isPlaceholder ? 'PLACEHOLDER' : 'SUCCESS'}`);
+        });
       }
+
+      // Debug: Log the image base64 map
+      console.log('Image Base64 Map:', imageBase64Map);
+      imageBase64Map.forEach((base64, originalUrl) => {
+        console.log(`Image mapping: ${originalUrl.substring(originalUrl.lastIndexOf('/') + 1)} -> ${base64.substring(0, 50)}...`);
+      });
 
       // Generate PDF content with base64 images
       const pdfContent = generatePDFContent(imageBase64Map);
@@ -832,7 +879,7 @@ export const usePDFGenerator = ({
       const canvas = await html2canvas(pdfContainer, {
         scale: 2, // Higher scale for better quality
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false, // Set to false to prevent tainted canvas issues
         backgroundColor: '#ffffff',
         width: pdfContainer.scrollWidth,
         height: pdfContainer.scrollHeight,
@@ -843,14 +890,19 @@ export const usePDFGenerator = ({
         logging: false, // Disable logging for cleaner output
         imageTimeout: 30000,
         removeContainer: false,
-        onclone: (clonedDoc) => {
+        onclone: (clonedDoc: Document) => {
           // Ensure images are properly loaded in the cloned document
           const clonedImages = clonedDoc.querySelectorAll('img');
           clonedImages.forEach((img: any) => {
             if (img.src && img.src.startsWith('data:')) {
               // Image is already base64, ensure it loads
-              img.onload = () => console.log('Image loaded in clone');
-              img.onerror = () => console.warn('Image failed to load in clone');
+              img.onload = () => console.log('Base64 image loaded in clone');
+              img.onerror = () => console.warn('Base64 image failed to load in clone');
+            } else if (img.src && !img.src.startsWith('data:')) {
+              // Image is a URL, set crossOrigin to anonymous
+              img.crossOrigin = 'anonymous';
+              img.onload = () => console.log('URL image loaded in clone');
+              img.onerror = () => console.warn('URL image failed to load in clone');
             }
           });
         }

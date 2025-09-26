@@ -2,7 +2,7 @@
  * Utility functions for handling image URLs with CORS support
  */
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000';
 
 /**
  * Converts a storage path to a CORS-enabled URL
@@ -25,6 +25,11 @@ export const getCorsEnabledImageUrl = (imagePath: string): string => {
   // If it's just a filename, use the new /api/images/ route
   if (!imagePath.startsWith('/')) {
     return `${BACKEND_URL}/api/images/${imagePath}`;
+  }
+  
+  // If it's already an /api/images/ path, just prepend backend URL
+  if (imagePath.startsWith('/api/images/')) {
+    return `${BACKEND_URL}${imagePath}`;
   }
   
   // Default case - prepend backend URL
