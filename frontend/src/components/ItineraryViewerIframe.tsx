@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Package, MapPin, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, User, Building2, Globe, Facebook, MessageCircle, Instagram, Youtube } from 'lucide-react';
 import { shareApi } from '../services/api';
 import type { Itinerary } from '../services/api';
-import { usePDFGenerator } from './PDFGenerator';
+import { useBackendPDFGenerator } from './BackendPDFGenerator';
 
 interface Day {
   id: string;
@@ -111,7 +111,7 @@ export const ItineraryViewerIframe: React.FC = () => {
     if (!itinerary) return;
     
     const currentPackage = itinerary.packages?.[selectedPackageIndex] || itinerary.packages?.[0];
-    const { downloadPDF } = usePDFGenerator({
+    const { downloadPDF } = useBackendPDFGenerator({
       itinerary,
       currentPackage,
       onGenerating: setIsGeneratingPDF

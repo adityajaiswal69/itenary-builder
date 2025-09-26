@@ -159,4 +159,16 @@ export const imageApi = {
     api.delete('/images/delete', { data: { filename } }),
 };
 
+export const pdfApi = {
+  generateItineraryPDF: (itineraryId: string) => 
+    api.get(`/itineraries/${itineraryId}/pdf`, {
+      responseType: 'blob',
+    }),
+  
+  generatePackagePDF: (packageId: string) => 
+    api.get(`/packages/${packageId}/pdf`, {
+      responseType: 'blob',
+    }),
+};
+
 export default api;
