@@ -1474,7 +1474,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                  {/* Package Details Section */}
                  {currentPackage && (
                    <div className="mt-12 bg-gray-50 rounded-lg p-6">
-                     <h3 className="text-xl font-bold mb-4">Package Details</h3>
+                     <h3 className="text-xl font-bold mb-4">Package Detailssssss</h3>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                        {currentPackage.start_location && (
                          <div className="flex items-center gap-2">
