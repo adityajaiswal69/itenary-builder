@@ -35,7 +35,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/images/upload', [\App\Http\Controllers\Api\ImageController::class, 'upload']);
     Route::post('/images/upload-multiple', [\App\Http\Controllers\Api\ImageController::class, 'uploadMultiple']);
     Route::delete('/images/delete', [\App\Http\Controllers\Api\ImageController::class, 'delete']);
+    
+    // Simple PDF generation
+    Route::post('/simple-pdf', [\App\Http\Controllers\Api\SimplePDFController::class, 'generatePDF']);
+    
 });
 
 // Public shareable routes
 Route::get('/share/{shareUuid}', [\App\Http\Controllers\Api\ShareController::class, 'show']);
+
+// Public image proxy with CORS
+Route::get('/image-proxy/{filename}', [\App\Http\Controllers\Api\ImageProxyController::class, 'serveImage']);

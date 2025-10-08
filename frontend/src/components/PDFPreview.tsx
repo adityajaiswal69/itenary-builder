@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Itinerary } from '../services/api';
+import { simplePdfService } from '../services/simplePdfService';
+import { getCorsEnabledImageUrl } from '../lib/imageUtils';
 
 interface PDFPreviewProps {
   itinerary: Itinerary;
@@ -21,9 +23,42 @@ export const PDFPreview: React.FC<PDFPreviewProps> = ({ itinerary, currentPackag
         return imageSrc;
       }
       
-      console.log(`Converting image: ${imageSrc}`);
+      // Convert to CORS-enabled URL
+      const corsEnabledUrl = getCorsEnabledImageUrl(imageSrc);
+      console.log(`Converting image: ${imageSrc} -> ${corsEnabledUrl}`);
       
-      // Strategy 1: Try direct fetch with no-cors mode (bypasses CORS)
+      // Strategy 1: Try CORS-enabled URL first
+      try {
+        const response = await fetch(corsEnabledUrl, {
+          mode: 'cors',
+          credentials: 'omit',
+          headers: {
+            'Accept': 'image/*',
+          },
+        });
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const dataURL = reader.result as string;
+              console.log(`Successfully converted image via CORS: ${imageSrc.substring(imageSrc.lastIndexOf('/') + 1)}`);
+              resolve(dataURL);
+            };
+            reader.onerror = () => {
+              console.warn('Failed to convert blob to base64:', imageSrc);
+              resolve(createImagePlaceholder());
+            };
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch (corsError) {
+        console.warn('CORS fetch failed, trying fallback:', corsError);
+      }
+      
+      // Strategy 2: Try direct fetch with no-cors mode (bypasses CORS)
       try {
         const response = await fetch(imageSrc, {
           mode: 'no-cors',
@@ -485,6 +520,28 @@ export const PDFPreview: React.FC<PDFPreviewProps> = ({ itinerary, currentPackag
     setLoadingImages(false);
   };
 
+  // Simple PDF generation
+  const generateSimplePDF = async () => {
+    if (!itinerary) return;
+
+    try {
+      console.log('Generating simple PDF...');
+      
+      const pdfData = {
+        itinerary: itinerary,
+        currentPackage: currentPackage,
+        user: itinerary.user
+      };
+      
+      await simplePdfService.generatePDF(pdfData);
+      console.log('Simple PDF generated successfully');
+      
+    } catch (error) {
+      console.error('Failed to generate simple PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
+  };
+
   // Test PDF generation with current images
   const testPDFGeneration = async () => {
     if (!itinerary) return;
@@ -552,9 +609,16 @@ export const PDFPreview: React.FC<PDFPreviewProps> = ({ itinerary, currentPackag
           </button>
           
           <button
+            onClick={generateSimplePDF}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            📄 Generate Simple PDF
+          </button>
+          
+          <button
             onClick={testPDFGeneration}
             disabled={imageBase64Map.size === 0}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
           >
             Test PDF Generation
           </button>

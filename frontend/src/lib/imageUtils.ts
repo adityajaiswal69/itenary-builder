@@ -1,39 +1,32 @@
 /**
- * Utility functions for handling image URLs with CORS support
+ * Convert storage URL to CORS-enabled proxy URL
  */
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-
-/**
- * Converts a storage path to a CORS-enabled URL
- * @param imagePath - The storage path (e.g., '/storage/images/filename.jpg')
- * @returns The CORS-enabled URL
- */
-export const getCorsEnabledImageUrl = (imagePath: string): string => {
-  // If it's already a full URL, return as is
-  if (imagePath.startsWith('http')) {
-    return imagePath;
+export function getCorsEnabledImageUrl(imageUrl: string): string {
+  // If it's already a data URL, return as is
+  if (imageUrl.startsWith('data:')) {
+    return imageUrl;
   }
   
-  // If it's a storage path, use the original endpoint (CORS will be handled by middleware)
-  if (imagePath.startsWith('/storage/')) {
-    return `${BACKEND_URL}${imagePath}`;
+  // If it's already a proxy URL, return as is
+  if (imageUrl.includes('/api/image-proxy/')) {
+    return imageUrl;
   }
   
-  // If it's just a filename, assume it's in storage/images
-  if (!imagePath.startsWith('/')) {
-    return `${BACKEND_URL}/storage/images/${imagePath}`;
+  // Extract filename from storage URL
+  const filename = imageUrl.split('/').pop();
+  
+  if (!filename) {
+    return imageUrl;
   }
   
-  // Default case - prepend backend URL
-  return `${BACKEND_URL}${imagePath}`;
-};
+  // Convert to proxy URL
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000/';
+  return `${backendUrl}api/image-proxy/${filename}`;
+}
 
 /**
- * Converts multiple image paths to CORS-enabled URLs
- * @param imagePaths - Array of storage paths
- * @returns Array of CORS-enabled URLs
+ * Check if an image URL is a storage URL that needs CORS
  */
-export const getCorsEnabledImageUrls = (imagePaths: string[]): string[] => {
-  return imagePaths.map(getCorsEnabledImageUrl);
-};
+export function isStorageUrl(imageUrl: string): boolean {
+  return imageUrl.includes('/storage/') && !imageUrl.includes('/api/image-proxy/');
+}

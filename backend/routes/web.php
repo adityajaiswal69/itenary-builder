@@ -17,7 +17,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Serve storage files with CORS headers
+// Serve storage files with CORS headers - this must come before any other routes
 Route::get('/storage/{path}', function ($path) {
     $filePath = storage_path('app/public/' . $path);
     
@@ -35,7 +35,7 @@ Route::get('/storage/{path}', function ($path) {
         ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
         ->header('Access-Control-Expose-Headers', 'Content-Type')
         ->header('Cache-Control', 'public, max-age=3600');
-})->where('path', '.*');
+})->where('path', '.*')->name('storage.cors');
 
 // Handle OPTIONS requests for CORS preflight
 Route::options('/storage/{path}', function () {
@@ -45,3 +45,21 @@ Route::options('/storage/{path}', function () {
         ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
         ->header('Access-Control-Max-Age', '86400');
 })->where('path', '.*');
+
+// Test CORS image loading
+Route::get('/test-cors', function () {
+    return '
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>CORS Test</title>
+    </head>
+    <body>
+        <h1>CORS Image Test</h1>
+        <p>Testing if images load with CORS headers...</p>
+        <img src="/api/image-proxy/8bea967e-f0c3-4a8a-8a45-68e517de325a.jpeg" alt="Test Image" style="max-width: 300px;" />
+        <p>If you can see the image above, CORS is working!</p>
+    </body>
+    </html>
+    ';
+});

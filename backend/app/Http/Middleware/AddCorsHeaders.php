@@ -18,14 +18,11 @@ class AddCorsHeaders
     {
         $response = $next($request);
         
-        // Add CORS headers for storage files and API requests
-        if (str_starts_with($request->path(), 'storage/') || str_starts_with($request->path(), 'api/')) {
-            $response->headers->set('Access-Control-Allow-Origin', env('FRONTEND_URL', 'http://localhost:5173'));
-            $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-            $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-            $response->headers->set('Access-Control-Expose-Headers', 'Content-Type');
-            $response->headers->set('Access-Control-Allow-Credentials', 'true');
-        }
+        // Add CORS headers to all responses
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        $response->headers->set('Access-Control-Expose-Headers', 'Content-Type');
         
         return $response;
     }
