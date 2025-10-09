@@ -52,6 +52,14 @@ class PDFService
         $coverImageBase64 = null;
         if ($itinerary->cover_image) {
             $coverImageBase64 = $imageBase64Map[$itinerary->cover_image] ?? $itinerary->cover_image;
+            
+            // Log cover image processing for debugging
+            \Log::info('Cover image processing', [
+                'cover_image_path' => $itinerary->cover_image,
+                'has_base64' => !empty($coverImageBase64),
+                'base64_length' => strlen($coverImageBase64 ?? ''),
+                'is_data_uri' => strpos($coverImageBase64 ?? '', 'data:') === 0
+            ]);
         }
 
         // Prepare company logo
@@ -141,10 +149,18 @@ class PDFService
             if (file_exists($fullPath)) {
                 $imageData = file_get_contents($fullPath);
                 $mimeType = mime_content_type($fullPath);
-                return 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+                
+                // Validate that we got actual image data
+                if ($imageData && $mimeType && strpos($mimeType, 'image/') === 0) {
+                    return 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+                }
             }
         } catch (\Exception $e) {
-            // Return placeholder if image can't be loaded
+            // Log the error for debugging
+            \Log::warning('Failed to convert image to base64: ' . $e->getMessage(), [
+                'imagePath' => $imagePath,
+                'fullPath' => $fullPath ?? 'not set'
+            ]);
         }
 
         return $this->createImagePlaceholder();
@@ -162,6 +178,12 @@ class PDFService
         } elseif (strpos($imagePath, '/images/') !== false) {
             $filename = basename($imagePath);
             return storage_path('app/public/images/' . $filename);
+        } elseif (strpos($imagePath, 'storage/') !== false) {
+            // Handle storage/ path format
+            return storage_path('app/public/' . str_replace('storage/', '', $imagePath));
+        } elseif (strpos($imagePath, 'public/') !== false) {
+            // Handle public/ path format
+            return storage_path('app/' . $imagePath);
         } else {
             // Assume it's just a filename
             return storage_path('app/public/images/' . $imagePath);

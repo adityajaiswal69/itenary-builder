@@ -262,8 +262,27 @@
     <div class="page cover-page">
         <!-- Header with Cover Image -->
         <div class="header-section">
-            @if($itinerary->cover_image)
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: url('{{ $coverImageBase64 }}'); background-size: cover; background-position: center;"></div>
+            @if($itinerary->cover_image && $coverImageBase64 && strpos($coverImageBase64, 'data:') === 0)
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; background: #f0f0f0;">
+                    <img src="{{ $coverImageBase64 }}" alt="Cover Image" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); min-width: 100%; min-height: 100%; width: auto; height: auto; object-fit: cover; object-position: center;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                    <!-- Fallback content that shows if image fails to load -->
+                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: none; align-items: center; justify-content: center;">
+                        <div style="text-align: center; color: white; opacity: 0.8;">
+                            <div style="font-size: 48px; margin-bottom: 20px;">🏔️</div>
+                            <div style="font-size: 24px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Travel & Tourism</div>
+                            <div style="font-size: 16px; margin-top: 10px;">Adventure Awaits</div>
+                        </div>
+                    </div>
+                </div>
+            @else
+                <!-- Fallback gradient background when no cover image -->
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                    <div style="text-align: center; color: white; opacity: 0.8;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">🏔️</div>
+                        <div style="font-size: 24px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Travel & Tourism</div>
+                        <div style="font-size: 16px; margin-top: 10px;">Adventure Awaits</div>
+                    </div>
+                </div>
             @endif
             <div class="cover-overlay"></div>
             <div class="header-content">
@@ -304,10 +323,15 @@
                 </div>
             </div>
             
-            <div style="margin: 30px 0; padding: 20px 10px 20px 40px; background: #f8f9fa; border-left: 4px solid #3b82f6; border-radius: 4px;">
-                <h3 style="font-size: 28px; font-weight: bold; margin: 0 0 20px 0; color: #1f2937;">Package Description</h3>
-                <div style="font-size: 22px; color: #374151; line-height: 1.6;">{!! $packageDescription !!}</div>
-            </div>
+            <div style="display: table; width: 100%;">
+                    <div style="display: table-cell; width: 90%; vertical-align: top; padding-right: 20px;">
+                        <h3 style="font-size: 28px; font-weight: bold; margin: 0 0 20px 0; color: #1f2937;">Package Description</h3>
+                        <div style="font-size: 20px; color: #374151; line-height: 1.5;">{!! $packageDescription !!}</div>
+                    </div>
+                    <div style="display: table-cell; width: 10%; vertical-align: top;">
+                        <!-- Empty space for better layout balance -->
+                    </div>
+                </div>
             
             <!-- Contact Information -->
             <div class="contact-info">
@@ -419,9 +443,11 @@
 
     <!-- Detailed Itinerary Pages -->
     @foreach($days as $dayIndex => $day)
-        <div style="page-break-before: always; font-family: Arial, sans-serif; line-height: 1.4; color: #333; width: 210mm; padding: 10px; margin: 0; min-height: 297mm; background: white; position: relative; padding-bottom: 60px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="font-size: 24px; font-weight: bold; margin: 0 0 8px 0; color: #d97706; text-transform: uppercase; letter-spacing: 0.5px;">DETAILED ITINERARY</h1>
+        <div style="page-break-before: always; font-family: Arial, sans-serif; line-height: 1.4; color: #333; width: 210mm; padding: 0; margin: 0; min-height: 297mm; background: white; position: relative; padding-bottom: 60px;">
+        
+        <!-- Detailed Itinerary Header -->
+        <div style="text-align: center; margin-bottom: 50px; padding-top: 40px; border-bottom: 2px solid #d97706; padding-bottom: 20px;">
+            <h1 style="font-size: 32px; font-weight: bold; margin: 0; color: #d97706; text-transform: uppercase; letter-spacing: 2px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">DETAILED ITINERARY</h1>
         </div>
 
         @php
@@ -454,51 +480,149 @@
         @endphp
 
         <!-- Day Header -->
-        <div style="margin-bottom: 30px; padding: 0 20px;">
-            <h2 style="font-size: 28px; text-align: left; font-weight: bold; margin: 0 0 15px 0; color: #059669; font-style: italic;">
+        <div style="margin-bottom: 40px; padding: 0 50px;">
+            <h2 style="font-size: 28px; text-align: left; font-weight: bold; margin: 0 0 25px 0; color: #059669; font-style: italic; border-left: 4px solid #059669; padding-left: 15px;">
                 Day {{ $dayIndex + 1 }}: {{ $dayTitle }}
             </h2>
             
             <!-- Day Description -->
             @if($dayDescription)
-                <div style="font-size: 26px; color: #374151; line-height: 1.8; margin-bottom: 25px; text-align: justify;">
+                <div style="font-size: 22px; color: #374151; line-height: 1.8; margin-bottom: 35px; text-align: left; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
                     {!! $dayDescription !!}
                 </div>
             @endif
+            
+            <!-- Highlights Section -->
+            <div style="margin-bottom: 30px;">
+                <h3 style="font-size: 20px; font-weight: bold; color: #1f2937; margin: 0 0 15px 0; text-align: left;">Highlights of the Tour:</h3>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    <li style="margin-bottom: 8px; font-size: 18px; color: #374151; display: flex; align-items: flex-start;">
+                        <span style="color: #059669; font-weight: bold; margin-right: 10px; font-size: 20px;">•</span>
+                        <span>Explore the scenic beauty of Shillong's waterfalls, caves & hills</span>
+                    </li>
+                    <li style="margin-bottom: 8px; font-size: 18px; color: #374151; display: flex; align-items: flex-start;">
+                        <span style="color: #059669; font-weight: bold; margin-right: 10px; font-size: 20px;">•</span>
+                        <span>Visit the <strong>Taj Mahal, Agra Fort, & Mehtab Bagh</strong></span>
+                    </li>
+                    <li style="margin-bottom: 8px; font-size: 18px; color: #374151; display: flex; align-items: flex-start;">
+                        <span style="color: #059669; font-weight: bold; margin-right: 10px; font-size: 20px;">•</span>
+                        <span>Witness the mesmerizing sunrise over the Taj</span>
+                    </li>
+                    <li style="margin-bottom: 8px; font-size: 18px; color: #374151; display: flex; align-items: flex-start;">
+                        <span style="color: #059669; font-weight: bold; margin-right: 10px; font-size: 20px;">•</span>
+                        <span>Enjoy local shopping for marble crafts & souvenirs</span>
+                    </li>
+                    <li style="margin-bottom: 8px; font-size: 18px; color: #374151; display: flex; align-items: flex-start;">
+                        <span style="color: #059669; font-weight: bold; margin-right: 10px; font-size: 20px;">•</span>
+                        <span>Relish mouthwatering North Indian delicacies</span>
+                    </li>
+                </ul>
+            </div>
         </div>
 
-        <!-- Main Content Area with Image -->
-        <div style="margin-bottom: 30px; padding: 0 20px;">
+        <!-- Main Content Area with Collage Grid Images -->
+        <div style="margin-bottom: 40px; padding: 0 50px;">
             @if(count($dayImages) > 0)
-                <!-- Large Central Image -->
-                <div style="text-align: center; margin-bottom: 25px;">
-                    @php
-                        $mainImage = $dayImages[0];
-                        $imageBase64 = $imageBase64Map[$mainImage] ?? $mainImage;
-                    @endphp
-                    <img src="{{ $imageBase64 }}" alt="Day {{ $dayIndex + 1 }} Image" style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);" />
-                </div>
-            @endif
-            
-            <!-- Additional Images Grid (if more than 1 image) -->
-            @if(count($dayImages) > 1)
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
-                    @foreach(array_slice($dayImages, 1, 3) as $image)
+                @if(count($dayImages) == 1)
+                    <!-- Single Image - Full Width with Proper Aspect Ratio -->
+                    <div style="margin-bottom: 40px; text-align: center;">
                         @php
-                            $imageBase64 = $imageBase64Map[$image] ?? $image;
+                            $mainImage = $dayImages[0];
+                            $imageBase64 = $imageBase64Map[$mainImage] ?? $mainImage;
                         @endphp
-                        <div style="text-align: center;">
-                            <img src="{{ $imageBase64 }}" alt="Day {{ $dayIndex + 1 }} Image" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" />
+                        <div style="display: inline-block; max-width: 100%;">
+                            <img src="{{ $imageBase64 }}" alt="Day {{ $dayIndex + 1 }} Image" style="max-width: 100%; height: auto; max-height: 600px; min-height: 500px; object-fit: cover; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: 2px solid #e5e7eb;" />
                         </div>
-                    @endforeach
-                </div>
+                    </div>
+                @elseif(count($dayImages) == 2)
+                    <!-- Two Images - Collage Grid -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 40px;">
+                        @foreach($dayImages as $imageIndex => $image)
+                            @php
+                                $imageBase64 = $imageBase64Map[$image] ?? $image;
+                            @endphp
+                            <div style="display: flex; justify-content: center; align-items: center; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: 2px solid #e5e7eb; background: #f8f9fa;">
+                                <img src="{{ $imageBase64 }}" alt="Day {{ $dayIndex + 1 }} Image {{ $imageIndex + 1 }}" style="width: 100%; height: 450px; object-fit: cover; object-position: center;" />
+                            </div>
+                        @endforeach
+                    </div>
+                @elseif(count($dayImages) == 3)
+                    <!-- Three Images - Collage Grid -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 25px; margin-bottom: 40px;">
+                        @foreach($dayImages as $imageIndex => $image)
+                            @php
+                                $imageBase64 = $imageBase64Map[$image] ?? $image;
+                            @endphp
+                            <div style="display: flex; justify-content: center; align-items: center; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: 2px solid #e5e7eb; background: #f8f9fa;">
+                                <img src="{{ $imageBase64 }}" alt="Day {{ $dayIndex + 1 }} Image {{ $imageIndex + 1 }}" style="width: 100%; height: 400px; object-fit: cover; object-position: center;" />
+                            </div>
+                        @endforeach
+                    </div>
+                @elseif(count($dayImages) == 4)
+                    <!-- Four Images - 2x2 Collage Grid -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 25px; margin-bottom: 40px;">
+                        @foreach($dayImages as $imageIndex => $image)
+                            @php
+                                $imageBase64 = $imageBase64Map[$image] ?? $image;
+                            @endphp
+                            <div style="display: flex; justify-content: center; align-items: center; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: 2px solid #e5e7eb; background: #f8f9fa;">
+                                <img src="{{ $imageBase64 }}" alt="Day {{ $dayIndex + 1 }} Image {{ $imageIndex + 1 }}" style="width: 100%; height: 350px; object-fit: cover; object-position: center;" />
+                            </div>
+                        @endforeach
+                    </div>
+                @elseif(count($dayImages) == 5)
+                    <!-- Five Images - Collage Grid -->
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; gap: 25px; margin-bottom: 40px;">
+                        <!-- Large main image -->
+                        <div style="grid-row: 1 / 3; display: flex; justify-content: center; align-items: center; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: 2px solid #e5e7eb; background: #f8f9fa; min-height: 500px;">
+                            @php
+                                $mainImage = $dayImages[0];
+                                $imageBase64 = $imageBase64Map[$mainImage] ?? $mainImage;
+                            @endphp
+                            <img src="{{ $imageBase64 }}" alt="Day {{ $dayIndex + 1 }} Image 1" style="width: 100%; height: 100%; object-fit: cover; object-position: center;" />
+                        </div>
+                        <!-- Four smaller images -->
+                        @foreach(array_slice($dayImages, 1, 4) as $imageIndex => $image)
+                            @php
+                                $imageBase64 = $imageBase64Map[$image] ?? $image;
+                            @endphp
+                            <div style="display: flex; justify-content: center; align-items: center; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: 2px solid #e5e7eb; background: #f8f9fa; min-height: 240px;">
+                                <img src="{{ $imageBase64 }}" alt="Day {{ $dayIndex + 1 }} Image {{ $imageIndex + 2 }}" style="width: 100%; height: 100%; object-fit: cover; object-position: center;" />
+                            </div>
+                        @endforeach
+                    </div>
+                @elseif(count($dayImages) == 6)
+                    <!-- Six Images - 2x3 Collage Grid -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 25px; margin-bottom: 40px;">
+                        @foreach($dayImages as $imageIndex => $image)
+                            @php
+                                $imageBase64 = $imageBase64Map[$image] ?? $image;
+                            @endphp
+                            <div style="display: flex; justify-content: center; align-items: center; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: 2px solid #e5e7eb; background: #f8f9fa;">
+                                <img src="{{ $imageBase64 }}" alt="Day {{ $dayIndex + 1 }} Image {{ $imageIndex + 1 }}" style="width: 100%; height: 320px; object-fit: cover; object-position: center;" />
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <!-- Seven or More Images - Masonry Collage Grid -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 40px;">
+                        @foreach(array_slice($dayImages, 0, 9) as $imageIndex => $image)
+                            @php
+                                $imageBase64 = $imageBase64Map[$image] ?? $image;
+                            @endphp
+                            <div style="display: flex; justify-content: center; align-items: center; overflow: hidden; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: 2px solid #e5e7eb; background: #f8f9fa; min-height: 300px;">
+                                <img src="{{ $imageBase64 }}" alt="Day {{ $dayIndex + 1 }} Image {{ $imageIndex + 1 }}" style="width: 100%; height: 100%; object-fit: cover; object-position: center;" />
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             @endif
         </div>
 
         <!-- Events Section - Show all events for the day -->
-       {{-- @if(count($allEvents) > 0)
-            <div style="margin-bottom: 30px; padding: 0 20px;">
-                <h3 style="font-size: 20px; font-weight: bold; color: #1f2937; margin: 0 0 20px 0; text-align: left;">Day Activities</h3>
+        @if(count($allEvents) > 0)
+            <div style="margin-bottom: 30px; padding: 0 50px;">
+                <h3 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 0 0 25px 0; text-align: left; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">Day Activities & Schedule</h3>
                 
                 @foreach($allEvents as $eventIndex => $event)
                     @php
@@ -515,28 +639,28 @@
                         $eventNotes = strip_tags($eventNotes, '<p><br><strong><em><ul><li>');
                     @endphp
                     
-                    <div style="background: #f8f9fa; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 20px; margin-bottom: 20px; page-break-inside: avoid;">
+                    <div style="background: #f8f9fa; border-left: 6px solid #3b82f6; border-radius: 12px; padding: 25px; margin-bottom: 25px; page-break-inside: avoid; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                         <!-- Event Header -->
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                            <div>
-                                <h4 style="font-size: 18px; font-weight: bold; color: #1f2937; margin: 0 0 5px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                            <div style="flex: 1;">
+                                <h4 style="font-size: 22px; font-weight: bold; color: #1f2937; margin: 0 0 8px 0; line-height: 1.3;">
                                     {{ $eventTitle }}
                                 </h4>
-                                <div style="font-size: 16px; color: #6b7280; margin-bottom: 8px;">
+                                <div style="font-size: 16px; color: #6b7280; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
                                     @if($eventCategory)
-                                        <span style="background: #e5e7eb; padding: 6px 12px; border-radius: 4px; margin-right: 8px; font-size: 14px;">{{ $eventCategory }}</span>
+                                        <span style="background: #e5e7eb; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500;">{{ $eventCategory }}</span>
                                     @endif
                                     @if($eventSubCategory && $eventSubCategory !== $eventCategory)
-                                        <span style="background: #dbeafe; padding: 6px 12px; border-radius: 4px; margin-right: 8px; font-size: 14px;">{{ $eventSubCategory }}</span>
+                                        <span style="background: #dbeafe; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500;">{{ $eventSubCategory }}</span>
                                     @endif
                                     @if($eventTime)
-                                        <span style="background: #fef3c7; padding: 6px 12px; border-radius: 4px; font-size: 14px;">🕐 {{ $eventTime }}</span>
+                                        <span style="background: #fef3c7; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500;">🕐 {{ $eventTime }}</span>
                                     @endif
                                 </div>
                             </div>
                             @if($eventAmount > 0)
-                                <div style="text-align: right;">
-                                    <div style="font-size: 18px; font-weight: bold; color: #166534;">
+                                <div style="text-align: right; margin-left: 20px;">
+                                    <div style="font-size: 20px; font-weight: bold; color: #166534; background: #f0fdf4; padding: 8px 16px; border-radius: 8px; border: 1px solid #bbf7d0;">
                                         {{ $eventCurrency }} {{ number_format($eventAmount) }}
                                     </div>
                                 </div>
@@ -545,29 +669,40 @@
                         
                         <!-- Event Description -->
                         @if($eventNotes)
-                            <div style="font-size: 22px; color: #374151; line-height: 1.6; margin-bottom: 15px;">
+                            <div style="font-size: 18px; color: #374151; line-height: 1.7; margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
                                 {!! $eventNotes !!}
                             </div>
                         @endif
                         
                         <!-- Event Images -->
                         @if(count($eventImages) > 0)
-                            <div style="margin-top: 15px;">
+                            <div style="margin-top: 20px;">
                                 @if(count($eventImages) === 1)
                                     <div style="text-align: center;">
                                         @php
                                             $imageBase64 = $imageBase64Map[$eventImages[0]] ?? $eventImages[0];
                                         @endphp
-                                        <img src="{{ $imageBase64 }}" alt="{{ $eventTitle }}" style="max-width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" />
+                                        <img src="{{ $imageBase64 }}" alt="{{ $eventTitle }}" style="max-width: 100%; max-height: 300px; object-fit: cover; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); border: 2px solid #e5e7eb;" />
                                     </div>
-                                @else
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                                @elseif(count($eventImages) === 2)
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                                         @foreach($eventImages as $image)
                                             @php
                                                 $imageBase64 = $imageBase64Map[$image] ?? $image;
                                             @endphp
                                             <div style="text-align: center;">
-                                                <img src="{{ $imageBase64 }}" alt="{{ $eventTitle }}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                                                <img src="{{ $imageBase64 }}" alt="{{ $eventTitle }}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;" />
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                                        @foreach($eventImages as $image)
+                                            @php
+                                                $imageBase64 = $imageBase64Map[$image] ?? $image;
+                                            @endphp
+                                            <div style="text-align: center;">
+                                                <img src="{{ $imageBase64 }}" alt="{{ $eventTitle }}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;" />
                                             </div>
                                         @endforeach
                                     </div>
@@ -577,13 +712,13 @@
                     </div>
                 @endforeach
             </div>
-        @endif --}}
+        @endif
 
         <!-- Footer Section -->
-        <div style="position: absolute; bottom: 20px; left: 20px; right: 20px;">
-            <div style="display: flex; align-items: center; font-size: 16px; color: #6b7280; margin-bottom: 15px;">
-                <span style="margin-right: 10px;">🌙</span>
-                <span>Night stay in {{ explode(' to ', $dayTitle)[1] ?? 'destination' }}</span>
+        <div style="position: absolute; bottom: 30px; left: 50px; right: 50px;">
+            <div style="display: flex; align-items: center; font-size: 20px; color: #374151; margin-bottom: 25px; font-weight: 500;">
+                <span style="margin-right: 12px; font-size: 22px; color: #f59e0b;">🌙</span>
+                <span>Night stay in {{ explode(' to ', $dayTitle)[1] ?? 'destination' }}.</span>
             </div>
             
             <!-- Contact Footer -->
