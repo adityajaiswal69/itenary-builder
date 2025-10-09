@@ -420,63 +420,88 @@
     <!-- Detailed Itinerary Pages -->
     @foreach($days as $dayIndex => $day)
         <div style="page-break-before: always; font-family: Arial, sans-serif; line-height: 1.4; color: #333; width: 210mm; padding: 10px; margin: 0; min-height: 297mm; background: white; position: relative; padding-bottom: 60px;">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h1 style="font-size: 24px; font-weight: bold; margin: 0 0 8px 0; color: #1f2937; text-transform: uppercase;">DETAILED ITINERARY</h1>
-                <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: #059669; font-style: italic;">{{ $day['title'] }}</h2>
-                <div style="font-size: 12px; color: #6b7280;">{{ date('D, M j, Y') }}</div>
-            </div>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="font-size: 24px; font-weight: bold; margin: 0 0 8px 0; color: #d97706; text-transform: uppercase; letter-spacing: 0.5px;">DETAILED ITINERARY</h1>
+        </div>
 
-            <div style="margin-bottom: 20px;">
-                @foreach($day['events'] ?? [] as $event)
-                    <div style="margin-bottom: 15px; page-break-inside: avoid;">
-                        <!-- Event title -->
-                        <h4 style="font-size: 16px; font-weight: bold; color: #1f2937; margin: 0 0 8px 0; text-transform: uppercase;">{{ $event['title'] }}</h4>
-                        
-                        <!-- Event details -->
-                        <div style="margin-bottom: 12px; font-size: 14px; color: #374151; line-height: 1.6;">
-                            @if(isset($event['category']))
-                                {{ $event['category'] }}
-                            @endif
-                            @if(isset($event['subCategory']) && $event['subCategory'] !== $event['category'])
-                                | {{ $event['subCategory'] }}
-                            @endif
-                            @if(isset($event['type']))
-                                | <strong>Type:</strong> {{ $event['type'] }}
-                            @endif
-                            @if(isset($event['time']))
-                                | <strong>Time:</strong> {{ $event['time'] }}
-                            @endif
+        @php
+            // Get the title from the first event (which contains the journey info)
+            $dayTitle = '';
+            $dayDescription = '';
+            $dayImages = [];
+            
+            if (isset($day['events']) && is_array($day['events']) && count($day['events']) > 0) {
+                $dayTitle = $day['events'][0]['title'] ?? '';
+                $dayDescription = $day['events'][0]['notes'] ?? '';
+                
+                // Collect all images from all events in this day
+                foreach ($day['events'] as $event) {
+                    if (isset($event['images']) && is_array($event['images'])) {
+                        $dayImages = array_merge($dayImages, $event['images']);
+                    }
+                }
+            }
+            
+            // Fallback to day title if no events
+            if (empty($dayTitle)) {
+                $dayTitle = $day['title'] ?? 'Day ' . ($dayIndex + 1);
+            }
+            
+            // Clean up description HTML
+            $dayDescription = strip_tags($dayDescription, '<p><br><strong><em>');
+        @endphp
+
+        <!-- Day Header -->
+        <div style="margin-bottom: 30px; padding: 0 20px;">
+            <h2 style="font-size: 28px; text-align: left; font-weight: bold; margin: 0 0 15px 0; color: #059669; font-style: italic;">
+                Day {{ $dayIndex + 1 }}: {{ $dayTitle }}
+            </h2>
+            
+            <!-- Day Description -->
+            @if($dayDescription)
+                <div style="font-size: 16px; color: #374151; line-height: 1.8; margin-bottom: 25px; text-align: justify;">
+                    {!! $dayDescription !!}
+                </div>
+            @endif
+        </div>
+
+        <!-- Main Content Area with Image -->
+        <div style="margin-bottom: 30px; padding: 0 20px;">
+            @if(count($dayImages) > 0)
+                <!-- Large Central Image -->
+                <div style="text-align: center; margin-bottom: 25px;">
+                    @php
+                        $mainImage = $dayImages[0];
+                        $imageBase64 = $imageBase64Map[$mainImage] ?? $mainImage;
+                    @endphp
+                    <img src="{{ $imageBase64 }}" alt="Day {{ $dayIndex + 1 }} Image" style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);" />
+                </div>
+            @endif
+            
+            <!-- Additional Images Grid (if more than 1 image) -->
+            @if(count($dayImages) > 1)
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                    @foreach(array_slice($dayImages, 1, 3) as $image)
+                        @php
+                            $imageBase64 = $imageBase64Map[$image] ?? $image;
+                        @endphp
+                        <div style="text-align: center;">
+                            <img src="{{ $imageBase64 }}" alt="Day {{ $dayIndex + 1 }} Image" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" />
                         </div>
-                        
-                        <!-- Event description -->
-                        @if(isset($event['notes']) && $event['notes'])
-                            <div style="margin-bottom: 12px;">
-                                <p style="font-size: 14px; color: #374151; margin: 0; line-height: 1.6; text-align: justify;">{{ strip_tags($event['notes']) }}</p>
-                            </div>
-                        @endif
-                        
-                        <!-- Event images -->
-                        @if(isset($event['images']) && is_array($event['images']) && count($event['images']) > 0)
-                            @include('pdf.partials.image-grid', ['images' => $event['images'], 'imageBase64Map' => $imageBase64Map])
-                        @endif
-                        
-                        <!-- Price information -->
-                        @if(isset($event['amount']) && $event['amount'])
-                            <div style="margin-top: 8px; font-size: 13px; color: #166534; font-weight: 600;">
-                                <strong>Cost:</strong> {{ $event['currency'] ?? 'USD' }} {{ number_format($event['amount']) }}
-                                @if(isset($event['bookedThrough']))
-                                    (Booked through: {{ $event['bookedThrough'] }})
-                                @endif
-                            </div>
-                        @endif
-                        
-                        <div style="border-bottom: 1px solid #e5e7eb; margin: 10px 0;"></div>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        <!-- Footer Section -->
+        <div style="position: absolute; bottom: 20px; left: 20px; right: 20px;">
+            <div style="display: flex; align-items: center; font-size: 16px; color: #6b7280; margin-bottom: 15px;">
+                <span style="margin-right: 10px;">🌙</span>
+                <span>Night stay in {{ explode(' to ', $dayTitle)[1] ?? 'destination' }}</span>
             </div>
             
-            <!-- Footer for each day page -->
-            <div style="position: absolute; bottom: 20px; left: 40px; right: 40px; text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+            <!-- Contact Footer -->
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 15px; font-size: 12px; color: #6b7280;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; gap: 30px;">
                         <span><strong>Mobile:</strong> {{ $companyDetails->phone ?? $user->phone ?? 'Contact Number' }}</span>
@@ -485,6 +510,7 @@
                     <div style="font-weight: 600;">Page {{ $dayIndex + 4 }}</div>
                 </div>
             </div>
+        </div>
         </div>
     @endforeach
 </body>
