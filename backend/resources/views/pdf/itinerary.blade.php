@@ -461,7 +461,7 @@
             
             <!-- Day Description -->
             @if($dayDescription)
-                <div style="font-size: 16px; color: #374151; line-height: 1.8; margin-bottom: 25px; text-align: justify;">
+                <div style="font-size: 26px; color: #374151; line-height: 1.8; margin-bottom: 25px; text-align: justify;">
                     {!! $dayDescription !!}
                 </div>
             @endif
@@ -496,7 +496,7 @@
         </div>
 
         <!-- Events Section - Show all events for the day -->
-        @if(count($allEvents) > 0)
+       {{-- @if(count($allEvents) > 0)
             <div style="margin-bottom: 30px; padding: 0 20px;">
                 <h3 style="font-size: 20px; font-weight: bold; color: #1f2937; margin: 0 0 20px 0; text-align: left;">Day Activities</h3>
                 
@@ -522,21 +522,21 @@
                                 <h4 style="font-size: 18px; font-weight: bold; color: #1f2937; margin: 0 0 5px 0;">
                                     {{ $eventTitle }}
                                 </h4>
-                                <div style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">
+                                <div style="font-size: 16px; color: #6b7280; margin-bottom: 8px;">
                                     @if($eventCategory)
-                                        <span style="background: #e5e7eb; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">{{ $eventCategory }}</span>
+                                        <span style="background: #e5e7eb; padding: 6px 12px; border-radius: 4px; margin-right: 8px; font-size: 14px;">{{ $eventCategory }}</span>
                                     @endif
                                     @if($eventSubCategory && $eventSubCategory !== $eventCategory)
-                                        <span style="background: #dbeafe; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">{{ $eventSubCategory }}</span>
+                                        <span style="background: #dbeafe; padding: 6px 12px; border-radius: 4px; margin-right: 8px; font-size: 14px;">{{ $eventSubCategory }}</span>
                                     @endif
                                     @if($eventTime)
-                                        <span style="background: #fef3c7; padding: 4px 8px; border-radius: 4px;">🕐 {{ $eventTime }}</span>
+                                        <span style="background: #fef3c7; padding: 6px 12px; border-radius: 4px; font-size: 14px;">🕐 {{ $eventTime }}</span>
                                     @endif
                                 </div>
                             </div>
                             @if($eventAmount > 0)
                                 <div style="text-align: right;">
-                                    <div style="font-size: 16px; font-weight: bold; color: #166534;">
+                                    <div style="font-size: 18px; font-weight: bold; color: #166534;">
                                         {{ $eventCurrency }} {{ number_format($eventAmount) }}
                                     </div>
                                 </div>
@@ -545,7 +545,7 @@
                         
                         <!-- Event Description -->
                         @if($eventNotes)
-                            <div style="font-size: 14px; color: #374151; line-height: 1.6; margin-bottom: 15px;">
+                            <div style="font-size: 22px; color: #374151; line-height: 1.6; margin-bottom: 15px;">
                                 {!! $eventNotes !!}
                             </div>
                         @endif
@@ -577,7 +577,7 @@
                     </div>
                 @endforeach
             </div>
-        @endif
+        @endif --}}
 
         <!-- Footer Section -->
         <div style="position: absolute; bottom: 20px; left: 20px; right: 20px;">
