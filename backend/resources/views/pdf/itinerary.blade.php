@@ -179,6 +179,18 @@
             position: relative;
             padding-bottom: 50px;
         }
+        .detailed-itinerary-page {
+            font-family: Arial, sans-serif;
+            line-height: 1.4;
+            color: #333;
+            width: 210mm;
+            padding: 10px;
+            margin: 0;
+            min-height: 297mm;
+            background: white;
+            position: relative;
+            padding-bottom: 60px;
+        }
         .inclusions-exclusions-flex {
             display: table;
             width: 100%;
@@ -443,7 +455,7 @@
 
     <!-- Detailed Itinerary Pages -->
     @foreach($days as $dayIndex => $day)
-        <div style="page-break-before: always; font-family: Arial, sans-serif; line-height: 1.4; color: #333; width: 210mm; padding: 0; margin: 0; min-height: 297mm; background: white; position: relative; padding-bottom: 60px;">
+        <div class="detailed-itinerary-page" style="page-break-before: always;">
         
         <!-- Detailed Itinerary Header -->
         <div style="text-align: center; margin-bottom: 50px; padding-top: 40px; border-bottom: 2px solid #d97706; padding-bottom: 20px;">
@@ -480,48 +492,21 @@
         @endphp
 
         <!-- Day Header -->
-        <div style="margin-bottom: 40px; padding: 0 50px;">
+        <div style="margin-bottom: 40px; margin-top: 20px; padding: 0 50px;">
             <h2 style="font-size: 28px; text-align: left; font-weight: bold; margin: 0 0 25px 0; color: #059669; font-style: italic; border-left: 4px solid #059669; padding-left: 15px;">
                 Day {{ $dayIndex + 1 }}: {{ $dayTitle }}
             </h2>
             
             <!-- Day Description -->
             @if($dayDescription)
-                <div style="font-size: 22px; color: #374151; line-height: 1.8; margin-bottom: 35px; text-align: left; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                <div style="font-size: 22px; color: #374151; line-height: 1.8; margin-bottom: 35px; margin-top: 15px; text-align: left; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
                     {!! $dayDescription !!}
                 </div>
             @endif
-            
-            <!-- Highlights Section -->
-            <div style="margin-bottom: 30px;">
-                <h3 style="font-size: 20px; font-weight: bold; color: #1f2937; margin: 0 0 15px 0; text-align: left;">Highlights of the Tour:</h3>
-                <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li style="margin-bottom: 8px; font-size: 18px; color: #374151; display: flex; align-items: flex-start;">
-                        <span style="color: #059669; font-weight: bold; margin-right: 10px; font-size: 20px;">•</span>
-                        <span>Explore the scenic beauty of Shillong's waterfalls, caves & hills</span>
-                    </li>
-                    <li style="margin-bottom: 8px; font-size: 18px; color: #374151; display: flex; align-items: flex-start;">
-                        <span style="color: #059669; font-weight: bold; margin-right: 10px; font-size: 20px;">•</span>
-                        <span>Visit the <strong>Taj Mahal, Agra Fort, & Mehtab Bagh</strong></span>
-                    </li>
-                    <li style="margin-bottom: 8px; font-size: 18px; color: #374151; display: flex; align-items: flex-start;">
-                        <span style="color: #059669; font-weight: bold; margin-right: 10px; font-size: 20px;">•</span>
-                        <span>Witness the mesmerizing sunrise over the Taj</span>
-                    </li>
-                    <li style="margin-bottom: 8px; font-size: 18px; color: #374151; display: flex; align-items: flex-start;">
-                        <span style="color: #059669; font-weight: bold; margin-right: 10px; font-size: 20px;">•</span>
-                        <span>Enjoy local shopping for marble crafts & souvenirs</span>
-                    </li>
-                    <li style="margin-bottom: 8px; font-size: 18px; color: #374151; display: flex; align-items: flex-start;">
-                        <span style="color: #059669; font-weight: bold; margin-right: 10px; font-size: 20px;">•</span>
-                        <span>Relish mouthwatering North Indian delicacies</span>
-                    </li>
-                </ul>
-            </div>
         </div>
 
         <!-- Main Content Area with Collage Grid Images -->
-        <div style="margin-bottom: 40px; padding: 0 50px;">
+        <div style="margin-bottom: 40px; margin-top: 20px; padding: 0 50px;">
             @if(count($dayImages) > 0)
                 @if(count($dayImages) == 1)
                     <!-- Single Image - Full Width with Proper Aspect Ratio -->
@@ -621,8 +606,8 @@
 
         <!-- Events Section - Show all events for the day -->
         @if(count($allEvents) > 0)
-            <div style="margin-bottom: 30px; padding: 0 50px;">
-                <h3 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 0 0 25px 0; text-align: left; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">Day Activities & Schedule</h3>
+            <div style="margin-bottom: 30px; margin-top: 30px; padding: 0 50px;">
+                <h3 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 25px 0 25px 0; text-align: left; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">Day Activities & Schedule</h3>
                 
                 @foreach($allEvents as $eventIndex => $event)
                     @php
