@@ -429,10 +429,12 @@
             $dayTitle = '';
             $dayDescription = '';
             $dayImages = [];
+            $allEvents = [];
             
             if (isset($day['events']) && is_array($day['events']) && count($day['events']) > 0) {
                 $dayTitle = $day['events'][0]['title'] ?? '';
                 $dayDescription = $day['events'][0]['notes'] ?? '';
+                $allEvents = $day['events'];
                 
                 // Collect all images from all events in this day
                 foreach ($day['events'] as $event) {
@@ -492,6 +494,90 @@
                 </div>
             @endif
         </div>
+
+        <!-- Events Section - Show all events for the day -->
+        @if(count($allEvents) > 0)
+            <div style="margin-bottom: 30px; padding: 0 20px;">
+                <h3 style="font-size: 20px; font-weight: bold; color: #1f2937; margin: 0 0 20px 0; text-align: left;">Day Activities</h3>
+                
+                @foreach($allEvents as $eventIndex => $event)
+                    @php
+                        $eventTitle = $event['title'] ?? '';
+                        $eventCategory = $event['category'] ?? '';
+                        $eventSubCategory = $event['subCategory'] ?? '';
+                        $eventNotes = $event['notes'] ?? '';
+                        $eventImages = $event['images'] ?? [];
+                        $eventTime = $event['time'] ?? '';
+                        $eventAmount = $event['amount'] ?? 0;
+                        $eventCurrency = $event['currency'] ?? '₹';
+                        
+                        // Clean up notes HTML
+                        $eventNotes = strip_tags($eventNotes, '<p><br><strong><em><ul><li>');
+                    @endphp
+                    
+                    <div style="background: #f8f9fa; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 20px; margin-bottom: 20px; page-break-inside: avoid;">
+                        <!-- Event Header -->
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                            <div>
+                                <h4 style="font-size: 18px; font-weight: bold; color: #1f2937; margin: 0 0 5px 0;">
+                                    {{ $eventTitle }}
+                                </h4>
+                                <div style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">
+                                    @if($eventCategory)
+                                        <span style="background: #e5e7eb; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">{{ $eventCategory }}</span>
+                                    @endif
+                                    @if($eventSubCategory && $eventSubCategory !== $eventCategory)
+                                        <span style="background: #dbeafe; padding: 4px 8px; border-radius: 4px; margin-right: 8px;">{{ $eventSubCategory }}</span>
+                                    @endif
+                                    @if($eventTime)
+                                        <span style="background: #fef3c7; padding: 4px 8px; border-radius: 4px;">🕐 {{ $eventTime }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                            @if($eventAmount > 0)
+                                <div style="text-align: right;">
+                                    <div style="font-size: 16px; font-weight: bold; color: #166534;">
+                                        {{ $eventCurrency }} {{ number_format($eventAmount) }}
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                        
+                        <!-- Event Description -->
+                        @if($eventNotes)
+                            <div style="font-size: 14px; color: #374151; line-height: 1.6; margin-bottom: 15px;">
+                                {!! $eventNotes !!}
+                            </div>
+                        @endif
+                        
+                        <!-- Event Images -->
+                        @if(count($eventImages) > 0)
+                            <div style="margin-top: 15px;">
+                                @if(count($eventImages) === 1)
+                                    <div style="text-align: center;">
+                                        @php
+                                            $imageBase64 = $imageBase64Map[$eventImages[0]] ?? $eventImages[0];
+                                        @endphp
+                                        <img src="{{ $imageBase64 }}" alt="{{ $eventTitle }}" style="max-width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" />
+                                    </div>
+                                @else
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                                        @foreach($eventImages as $image)
+                                            @php
+                                                $imageBase64 = $imageBase64Map[$image] ?? $image;
+                                            @endphp
+                                            <div style="text-align: center;">
+                                                <img src="{{ $imageBase64 }}" alt="{{ $eventTitle }}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        @endif
 
         <!-- Footer Section -->
         <div style="position: absolute; bottom: 20px; left: 20px; right: 20px;">
