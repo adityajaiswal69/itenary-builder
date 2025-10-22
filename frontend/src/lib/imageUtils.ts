@@ -1,39 +1,81 @@
 /**
- * Utility functions for handling image URLs with CORS support
+ * Utility functions for handling image URLs with frontend storage
  */
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+import { ImageUploadService } from '../services/imageUploadService';
 
 /**
- * Converts a storage path to a CORS-enabled URL
- * @param imagePath - The storage path (e.g., '/storage/images/filename.jpg')
- * @returns The CORS-enabled URL
+ * Converts a storage path to a frontend-accessible URL
+ * @param imagePath - The storage path (e.g., '/images/filename.jpg')
+ * @returns The frontend-accessible URL
  */
-export const getCorsEnabledImageUrl = (imagePath: string): string => {
+export const getFrontendImageUrl = (imagePath: string): string => {
   // If it's already a full URL, return as is
   if (imagePath.startsWith('http')) {
     return imagePath;
   }
   
-  // If it's a storage path, use the original endpoint (CORS will be handled by middleware)
-  if (imagePath.startsWith('/storage/')) {
-    return `${BACKEND_URL}${imagePath}`;
+  // If it's a base64 data URL, return as is
+  if (imagePath.startsWith('data:')) {
+    return imagePath;
   }
   
-  // If it's just a filename, assume it's in storage/images
+  // If it's a blob URL (from frontend storage), return as is
+  if (imagePath.startsWith('blob:')) {
+    return imagePath;
+  }
+  
+  // If it's a frontend public path, try to get from storage
+  if (imagePath.startsWith('/images/')) {
+    const filename = imagePath.split('/images/').pop();
+    if (filename) {
+      const storedUrl = getStoredImageUrl(filename);
+      if (storedUrl) {
+        return storedUrl;
+      }
+    }
+    return imagePath;
+  }
+  
+  // If it's just a filename, try to get from storage
   if (!imagePath.startsWith('/')) {
-    return `${BACKEND_URL}/storage/images/${imagePath}`;
+    const storedUrl = getStoredImageUrl(imagePath);
+    if (storedUrl) {
+      return storedUrl;
+    }
+    return `/images/${imagePath}`;
   }
   
-  // Default case - prepend backend URL
-  return `${BACKEND_URL}${imagePath}`;
+  // Default case - return as is
+  return imagePath;
 };
 
 /**
- * Converts multiple image paths to CORS-enabled URLs
+ * Converts multiple image paths to frontend-accessible URLs
  * @param imagePaths - Array of storage paths
- * @returns Array of CORS-enabled URLs
+ * @returns Array of frontend-accessible URLs
  */
-export const getCorsEnabledImageUrls = (imagePaths: string[]): string[] => {
-  return imagePaths.map(getCorsEnabledImageUrl);
+export const getFrontendImageUrls = (imagePaths: string[]): string[] => {
+  return imagePaths.map(getFrontendImageUrl);
 };
+
+/**
+ * Get image URL from frontend storage by filename
+ * @param filename - The filename to look up
+ * @returns The image URL or null if not found
+ */
+export const getStoredImageUrl = (filename: string): string | null => {
+  return ImageUploadService.getImageUrl(filename);
+};
+
+/**
+ * Legacy function for backward compatibility
+ * @deprecated Use getFrontendImageUrl instead
+ */
+export const getCorsEnabledImageUrl = getFrontendImageUrl;
+
+/**
+ * Legacy function for backward compatibility
+ * @deprecated Use getFrontendImageUrls instead
+ */
+export const getCorsEnabledImageUrls = getFrontendImageUrls;

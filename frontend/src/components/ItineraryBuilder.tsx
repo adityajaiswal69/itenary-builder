@@ -29,7 +29,9 @@ import {
   Youtube
 } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { itineraryApi, packageApi, imageApi, companyDetailsApi } from '../services/api';
+import { itineraryApi, packageApi, companyDetailsApi } from '../services/api';
+import { frontendImageApi } from '../services/frontendImageApi';
+import { getFrontendImageUrl } from '../lib/imageUtils';
 import type { Itinerary, Package as PackageType, CompanyDetails } from '../services/api';
 
 import { PackageInfoModal } from './PackageInfoModal';
@@ -701,11 +703,11 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
       }
       
       try {
-        // Upload image to server
-        const response = await imageApi.upload(file);
+        // Upload image to frontend storage
+        const response = await frontendImageApi.upload(file);
         
         if (response.data.success) {
-          setCoverImage(response.data.path);
+          setCoverImage(response.data.path!);
           setError(null); // Clear any previous errors
           setSuccessMessage('Cover image uploaded successfully!');
           setTimeout(() => {
@@ -727,7 +729,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
   };
 
   const removeCoverImage = async () => {
-    // Delete cover image from server if it exists
+    // Delete cover image from frontend storage if it exists
     if (coverImage) {
       try {
         let filename;
@@ -740,12 +742,12 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
         }
         
         if (filename) {
-          await imageApi.delete(filename);
+          await frontendImageApi.delete(filename);
           console.log('Deleted cover image:', filename);
         }
       } catch (error) {
         console.error('Failed to delete cover image:', error);
-        // Continue with removal even if server deletion fails
+        // Continue with removal even if frontend storage deletion fails
       }
     }
     
@@ -1172,7 +1174,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                           {event.images.map((image, index) => (
                             <img
                               key={index}
-                              src={image.startsWith('http') ? image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${image}`}
+                              src={getFrontendImageUrl(image)}
                               alt={`Event ${index + 1}`}
                               className="w-full h-24 object-cover rounded"
                             />
@@ -1449,7 +1451,7 @@ export const ItineraryBuilder: React.FC<ItineraryBuilderProps> = ({ onLogout }) 
                                    {event.images.map((image: string, index: number) => (
                                      <img
                                        key={index}
-                                       src={image.startsWith('http') ? image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${image}`}
+                                       src={getFrontendImageUrl(image)}
                                        alt={`Event ${index + 1}`}
                                        className="w-full h-24 object-cover rounded"
                                      />

@@ -4,6 +4,7 @@ import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Package, MapPin, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, User, Building2, Globe, Facebook, MessageCircle, Instagram, Youtube } from 'lucide-react';
 import { shareApi } from '../services/api';
+import { getFrontendImageUrl } from '../lib/imageUtils';
 import type { Itinerary } from '../services/api';
 import { usePDFGenerator } from './PDFGenerator';
 
@@ -589,7 +590,7 @@ export const ItineraryViewerIframe: React.FC = () => {
                                     {event.images.map((image, imgIndex) => (
                                       <img
                                         key={imgIndex}
-                                        src={image.startsWith('http') ? image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${image}`}
+                                        src={getFrontendImageUrl(image)}
                                         alt={`${event.title} ${imgIndex + 1}`}
                                         className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
                                         onClick={() => openImageSlider(event.images, imgIndex, event.title)}

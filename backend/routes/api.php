@@ -31,10 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/company-details/{id}', [\App\Http\Controllers\Api\CompanyDetailsController::class, 'update']);
     Route::delete('/company-details/{id}', [\App\Http\Controllers\Api\CompanyDetailsController::class, 'destroy']);
     
-    // Image upload routes
-    Route::post('/images/upload', [\App\Http\Controllers\Api\ImageController::class, 'upload']);
-    Route::post('/images/upload-multiple', [\App\Http\Controllers\Api\ImageController::class, 'uploadMultiple']);
-    Route::delete('/images/delete', [\App\Http\Controllers\Api\ImageController::class, 'delete']);
+    // Image upload routes removed - now using frontend storage
 });
 
 // Public shareable routes

@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import type { Itinerary } from '../services/api';
-import { getCorsEnabledImageUrl } from '../lib/imageUtils';
+import { getFrontendImageUrl } from '../lib/imageUtils';
 
 interface PDFGeneratorProps {
   itinerary: Itinerary;
@@ -23,13 +23,13 @@ export const usePDFGenerator = ({
         return imageSrc;
       }
       
-      // Convert to CORS-enabled URL
-      const corsEnabledUrl = getCorsEnabledImageUrl(imageSrc);
-      console.log(`Converting image: ${imageSrc} -> ${corsEnabledUrl}`);
+      // Convert to frontend-accessible URL
+      const frontendUrl = getFrontendImageUrl(imageSrc);
+      console.log(`Converting image: ${imageSrc} -> ${frontendUrl}`);
       
       // Strategy 1: Try direct fetch with no-cors mode (bypasses CORS)
       try {
-        const response = await fetch(corsEnabledUrl, {
+        const response = await fetch(frontendUrl, {
           mode: 'no-cors',
           cache: 'no-cache'
         });
@@ -81,7 +81,7 @@ export const usePDFGenerator = ({
       
       // Strategy 2: Try with CORS mode
       try {
-        const response = await fetch(corsEnabledUrl, {
+        const response = await fetch(frontendUrl, {
           mode: 'cors',
           credentials: 'omit',
           headers: {

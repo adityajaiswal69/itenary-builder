@@ -4,6 +4,7 @@ import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { ArrowLeft, Package, MapPin, Calendar, Download, Mail, Phone, Info, X, ChevronLeft, ChevronRight, Clock, Building, Plane, Car, Ship, Utensils, Building2, Globe, Facebook, MessageCircle, Instagram, Youtube } from 'lucide-react';
 import { shareApi } from '../services/api';
+import { getFrontendImageUrl } from '../lib/imageUtils';
 import type { Itinerary } from '../services/api';
 import { usePDFGenerator } from './PDFGenerator';
 
@@ -393,7 +394,7 @@ export const ItineraryViewer: React.FC = () => {
           {itinerary.cover_image && (
             <div 
               className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-              style={{ backgroundImage: `url(${itinerary.cover_image.startsWith('http') ? itinerary.cover_image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${itinerary.cover_image}`})` }}
+              style={{ backgroundImage: `url(${getFrontendImageUrl(itinerary.cover_image)})` }}
             />
           )}
           
@@ -692,7 +693,7 @@ export const ItineraryViewer: React.FC = () => {
                                 onClick={() => openImageSlider(event.images, index, `${event.title} - ${day.title}`)}
                               >
                                 <img
-                                  src={image.startsWith('http') ? image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${image}`}
+                                  src={getFrontendImageUrl(image)}
                                   alt={`Event ${index + 1}`}
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />

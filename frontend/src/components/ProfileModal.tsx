@@ -17,7 +17,8 @@ import {
   Instagram,
   Youtube
 } from 'lucide-react';
-import { companyDetailsApi, imageApi, type CompanyDetails } from '../services/api';
+import { companyDetailsApi, type CompanyDetails } from '../services/api';
+import { frontendImageApi } from '../services/frontendImageApi';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -111,8 +112,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, use
 
     try {
       setUploadingLogo(true);
-      const response = await imageApi.upload(file);
-       const logoUrl = response.data.path; // Changed from response.data.url to response.data.path
+      const response = await frontendImageApi.upload(file);
+      const logoUrl = response.data.path; // Frontend storage path
       setFormData(prev => ({
         ...prev,
         logo: logoUrl

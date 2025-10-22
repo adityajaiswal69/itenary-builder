@@ -4,7 +4,8 @@ import { Input } from './ui/input';
 import { X, Plus, Camera, Calendar, Utensils, Car } from 'lucide-react';
 import { TipTapEditor } from './TipTapEditor';
 import { ErrorBoundary } from './ErrorBoundary';
-import { imageApi } from '../services/api';
+import { frontendImageApi } from '../services/frontendImageApi';
+import { getFrontendImageUrl } from '../lib/imageUtils';
 
 interface Event {
   id: string;
@@ -460,14 +461,14 @@ export const EventModal: React.FC<EventModalProps> = ({
       }
       
       try {
-        // Upload image to server
-        const response = await imageApi.upload(file);
+        // Upload image to frontend storage
+        const response = await frontendImageApi.upload(file);
         
         if (response.data.success) {
           console.log('Image uploaded successfully:', response.data);
           setFormData({
             ...formData,
-            images: [...formData.images, response.data.path]
+            images: [...formData.images, response.data.path!]
           });
         } else {
           alert('Failed to upload image: ' + response.data.error);
@@ -502,12 +503,12 @@ export const EventModal: React.FC<EventModalProps> = ({
       console.log('Extracted filename:', filename);
       
       if (filename) {
-        const response = await imageApi.delete(filename);
+        const response = await frontendImageApi.delete(filename);
         console.log('Delete response:', response.data);
       }
     } catch (error) {
-      console.error('Failed to delete image from server:', error);
-      // Continue with local removal even if server deletion fails
+      console.error('Failed to delete image from frontend storage:', error);
+      // Continue with local removal even if storage deletion fails
     }
     
     setFormData({
@@ -767,7 +768,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                 {formData.images.map((image, index) => {
                   console.log('Displaying image:', image, 'at index:', index);
                   // Ensure we have the correct base URL for images with CORS support
-                  const imageUrl = image.startsWith('http') ? image : `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${image}`;
+                  const imageUrl = getFrontendImageUrl(image);
                   return (
                     <div key={index} className="relative">
                       <img
